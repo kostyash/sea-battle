@@ -1,0 +1,434 @@
+:host {
+  display: block;
+  container-type: inline-size;
+}
+
+.frame {
+  display: grid;
+  grid-template-columns: 1.35rem minmax(0, 1fr);
+  grid-template-rows: 1.1rem minmax(0, 1fr);
+  gap: 0.3rem;
+}
+
+.corner {
+  grid-area: 1 / 1;
+}
+
+.gutter {
+  display: grid;
+  font-family: var(--data);
+  font-size: clamp(8px, 1.6cqw, 11px);
+  letter-spacing: 0.06em;
+  color: var(--gutter, var(--sepia));
+}
+
+.gutter span {
+  display: grid;
+  place-items: center;
+  transition: color 0.15s ease;
+}
+
+.gutter span.lit {
+  color: var(--brass);
+  text-shadow: 0 0 8px rgba(201, 154, 62, 0.5);
+}
+
+.gutter--cols {
+  grid-area: 1 / 2;
+  grid-template-columns: repeat(10, 1fr);
+}
+
+.gutter--rows {
+  grid-area: 2 / 1;
+  grid-template-rows: repeat(10, 1fr);
+}
+
+.water {
+  position: relative;
+  grid-area: 2 / 2;
+  display: grid;
+  grid-template: repeat(10, 1fr) / repeat(10, 1fr);
+  aspect-ratio: 1;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+/* ── бумага: свои воды нанесены на карту ───────────────────────────────── */
+
+:host(.is-chart) {
+  --line: rgba(20, 56, 79, 0.22);
+  --gutter: rgba(221, 211, 183, 0.6);
+}
+
+:host(.is-chart) .water {
+  background-color: var(--chart);
+  background-image:
+    radial-gradient(140% 100% at 15% 0%, rgba(255, 252, 240, 0.55), transparent 55%),
+    radial-gradient(90% 70% at 100% 100%, rgba(138, 122, 85, 0.32), transparent 60%);
+  border: 1px solid rgba(20, 56, 79, 0.55);
+  box-shadow:
+    inset 0 0 42px rgba(138, 122, 85, 0.4),
+    0 18px 40px -22px rgba(0, 0, 0, 0.85);
+}
+
+:host(.is-chart) .water::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background-image: var(--paper-grain);
+  opacity: 0.16;
+  mix-blend-mode: multiply;
+  pointer-events: none;
+}
+
+.contours,
+.rose,
+.soundings {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.contours path {
+  fill: none;
+  stroke: var(--sepia);
+  stroke-width: 0.35;
+  opacity: 0.5;
+  stroke-dasharray: 2 1.4;
+}
+
+.soundings span {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  font-family: var(--data);
+  font-size: clamp(6px, 1.2cqw, 9px);
+  color: var(--sepia);
+  opacity: 0.55;
+}
+
+.rose {
+  left: auto;
+  top: auto;
+  right: 2%;
+  bottom: 2%;
+  width: 22%;
+  height: 22%;
+  opacity: 0.3;
+}
+
+.rose circle {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 1.1;
+}
+
+.rose .needle {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 1.1;
+}
+
+.rose .needle--cross {
+  opacity: 0.5;
+}
+
+/* ── пучина: чужие воды не нанесены никем ──────────────────────────────── */
+
+:host(.is-abyss) {
+  --line: rgba(159, 217, 227, 0.1);
+  --gutter: rgba(159, 217, 227, 0.45);
+}
+
+:host(.is-abyss) .water {
+  background:
+    radial-gradient(120% 90% at 50% 0%, #123246, transparent 70%),
+    radial-gradient(80% 60% at 20% 100%, rgba(20, 56, 79, 0.8), transparent 70%),
+    var(--abyss-2);
+  border: 1px solid rgba(159, 217, 227, 0.22);
+  box-shadow:
+    inset 0 0 60px rgba(0, 0, 0, 0.7),
+    0 18px 40px -22px rgba(0, 0, 0, 0.9);
+}
+
+.sweep {
+  position: absolute;
+  inset: -45%;
+  z-index: 0;
+  pointer-events: none;
+  background: conic-gradient(
+    from 0deg,
+    rgba(159, 217, 227, 0.11) 0deg,
+    rgba(159, 217, 227, 0.055) 30deg,
+    rgba(159, 217, 227, 0.015) 70deg,
+    transparent 115deg,
+    transparent 360deg
+  );
+  mask-image: radial-gradient(closest-side, #000 18%, rgba(0, 0, 0, 0.5) 60%, transparent 92%);
+  filter: blur(10px);
+  animation: sweep 9s linear infinite;
+}
+
+@keyframes sweep {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ── клетки ────────────────────────────────────────────────────────────── */
+
+/* ряд существует только для доступности — раскладку ведёт сетка .water */
+.row {
+  display: contents;
+}
+
+.cell {
+  position: relative;
+  z-index: 1;
+  padding: 0;
+  background: transparent;
+  box-shadow:
+    inset -1px 0 0 var(--line),
+    inset 0 -1px 0 var(--line);
+  transition: background-color 0.12s ease;
+}
+
+.cell:disabled {
+  cursor: default;
+}
+
+.cell.cross {
+  background-color: rgba(159, 217, 227, 0.05);
+}
+
+:host(.is-chart) .cell.cross {
+  background-color: rgba(20, 56, 79, 0.06);
+}
+
+:host(.is-live) .cell:hover:not(:disabled) {
+  background-color: rgba(201, 154, 62, 0.16);
+  box-shadow:
+    inset 0 0 0 1px var(--brass),
+    0 0 14px rgba(201, 154, 62, 0.35);
+}
+
+.cell:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: -2px;
+  z-index: 5;
+}
+
+.mark {
+  position: absolute;
+  inset: 0;
+  display: block;
+}
+
+/* промах — след на воде */
+.mark::before {
+  content: '';
+  position: absolute;
+  inset: 34%;
+  border-radius: 50%;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.miss .mark::before {
+  opacity: 1;
+  border: 1.5px solid var(--foam);
+  box-shadow: 0 0 6px rgba(159, 217, 227, 0.35);
+}
+
+:host(.is-chart) .miss .mark::before {
+  border-color: var(--sepia);
+  box-shadow: none;
+}
+
+/* попадание — перечёркнутая клетка */
+.hit .mark,
+.sunk .mark {
+  background:
+    linear-gradient(45deg, transparent calc(50% - 1.2px), var(--x, var(--signal)) calc(50% - 1.2px) calc(50% + 1.2px), transparent calc(50% + 1.2px)),
+    linear-gradient(-45deg, transparent calc(50% - 1.2px), var(--x, var(--signal)) calc(50% - 1.2px) calc(50% + 1.2px), transparent calc(50% + 1.2px));
+  background-size: 68% 68%;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.hit {
+  background-color: rgba(224, 71, 43, 0.16);
+  animation: ember 2.4s ease-in-out infinite;
+}
+
+@keyframes ember {
+  0%,
+  100% {
+    box-shadow:
+      inset -1px 0 0 var(--line),
+      inset 0 -1px 0 var(--line),
+      inset 0 0 12px rgba(224, 71, 43, 0.4);
+  }
+  50% {
+    box-shadow:
+      inset -1px 0 0 var(--line),
+      inset 0 -1px 0 var(--line),
+      inset 0 0 20px rgba(255, 122, 77, 0.7);
+  }
+}
+
+.sunk {
+  --x: rgba(224, 71, 43, 0.75);
+  background-color: rgba(224, 71, 43, 0.1);
+}
+
+:host(.is-chart) .sunk {
+  background-color: rgba(224, 71, 43, 0.14);
+}
+
+/* ── корабли ───────────────────────────────────────────────────────────── */
+
+.hull,
+.ghost,
+.splash {
+  position: absolute;
+  z-index: 2;
+  pointer-events: none;
+}
+
+/* Никаких процентных отступов: процент считается от ШИРИНЫ, и на четырёхпалубном
+   он съедал бы высоту клетки, а silhouette с сохранением пропорций сжимался бы
+   тем сильнее, чем длиннее корабль. Поля у корпуса и так заложены во вьюбокс. */
+.hull__glyph {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.hull__glyph.turned {
+  transform: translate(-50%, -50%) rotate(90deg);
+}
+
+:host(.is-chart) .hull {
+  --glyph-fill: rgba(20, 56, 79, 0.14);
+  --glyph-stroke: var(--ink);
+  --glyph-detail: rgba(20, 56, 79, 0.55);
+  --glyph-weight: 1.2;
+}
+
+:host(.is-chart) .hull.lost {
+  --glyph-fill: rgba(224, 71, 43, 0.18);
+  --glyph-stroke: var(--signal);
+  --glyph-detail: rgba(224, 71, 43, 0.7);
+  opacity: 0.85;
+}
+
+/* подтверждённая разведка: потопленный корабль наносится на чужой квадрат */
+:host(.is-abyss) .hull {
+  --glyph-fill: rgba(221, 211, 183, 0.07);
+  --glyph-stroke: var(--chart-2);
+  --glyph-detail: rgba(221, 211, 183, 0.5);
+  --glyph-weight: 1.2;
+  animation: ink-in 0.85s cubic-bezier(0.22, 0.9, 0.3, 1) both;
+  filter: drop-shadow(0 0 8px rgba(221, 211, 183, 0.25));
+}
+
+/* уцелевшие корабли, вскрытые после боя, — сведения задним числом, а не разведка */
+:host(.is-abyss) .hull:not(.lost) {
+  --glyph-fill: rgba(221, 211, 183, 0.03);
+  --glyph-stroke: rgba(221, 211, 183, 0.36);
+  --glyph-detail: rgba(221, 211, 183, 0.22);
+  filter: none;
+}
+
+@keyframes ink-in {
+  from {
+    clip-path: inset(0 100% 0 0);
+    opacity: 0;
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+    opacity: 1;
+  }
+}
+
+.ghost {
+  z-index: 3;
+  --glyph-fill: rgba(201, 154, 62, 0.2);
+  --glyph-stroke: var(--brass);
+  --glyph-detail: rgba(201, 154, 62, 0.8);
+  --glyph-weight: 1.4;
+  outline: 1px dashed rgba(201, 154, 62, 0.75);
+  outline-offset: -2px;
+  background: rgba(201, 154, 62, 0.08);
+}
+
+.ghost.blocked {
+  --glyph-fill: rgba(224, 71, 43, 0.18);
+  --glyph-stroke: var(--signal);
+  --glyph-detail: rgba(224, 71, 43, 0.85);
+  outline-color: var(--signal);
+  background: rgba(224, 71, 43, 0.1);
+}
+
+/* ── всплеск ───────────────────────────────────────────────────────────── */
+
+.splash {
+  z-index: 4;
+  display: grid;
+  place-items: center;
+}
+
+.splash i {
+  position: absolute;
+  width: 70%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: 1.5px solid var(--ring, var(--foam));
+  opacity: 0;
+  animation: ripple 1.05s ease-out forwards;
+}
+
+.splash i:nth-child(2) {
+  animation-delay: 0.13s;
+}
+.splash i:nth-child(3) {
+  animation-delay: 0.26s;
+}
+
+.splash--hit,
+.splash--sunk {
+  --ring: var(--signal-glow);
+}
+
+.splash--hit i,
+.splash--sunk i {
+  border-width: 2px;
+}
+
+.splash--sunk i {
+  animation-duration: 1.6s;
+}
+
+@keyframes ripple {
+  0% {
+    transform: scale(0.25);
+    opacity: 0.95;
+  }
+  100% {
+    transform: scale(3.6);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sweep,
+  .hit {
+    animation: none;
+  }
+  .splash i {
+    animation-duration: 0.4s;
+  }
+}

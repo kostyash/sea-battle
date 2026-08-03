@@ -1,0 +1,77 @@
+<div class="deck" [class.phase-deploy]="deploying()">
+  <header class="masthead">
+    <div class="brand">
+      <p class="eyebrow">Учебный полигон · квадрат 10 × 10</p>
+      <h1>Морской бой</h1>
+    </div>
+
+    <div class="chrome">
+      <button
+        type="button"
+        class="btn btn--ghost"
+        [attr.aria-pressed]="!store.audio.muted()"
+        (click)="store.audio.toggle()"
+      >
+        {{ store.audio.muted() ? 'Звук выкл' : 'Звук вкл' }}
+      </button>
+      <button type="button" class="btn btn--ghost" (click)="store.newGame()">Новый бой</button>
+    </div>
+  </header>
+
+  <p class="rail" aria-live="polite">
+    <span class="rail__turn" [class.theirs]="fighting() && store.turn() === 'enemy'">{{ turnWord() }}</span>
+    <span class="rail__msg">{{ store.message() }}</span>
+    @if (surveyed() && !store.verdictOpen()) {
+      <button type="button" class="rail__link" (click)="store.verdictOpen.set(true)">Показать итог</button>
+    }
+  </p>
+
+  <main class="theatre">
+    <section class="sea sea--home">
+      <div class="sea__head">
+        <h2>Ваши воды</h2>
+        <span class="sea__note">нанесены на карту</span>
+      </div>
+      <app-board-grid
+        variant="chart"
+        caption="Ваш квадрат"
+        [board]="store.player()"
+        [interactive]="deploying()"
+        [ghost]="store.ghost()"
+        [splash]="homeSplash()"
+        (cellEnter)="store.setHover($event)"
+        (cellLeave)="store.setHover(null)"
+        (cellPick)="store.placeAt($event)"
+        (rotateRequest)="store.rotate()"
+      />
+    </section>
+
+    <section class="sea sea--away">
+      <div class="sea__head">
+        <h2>Квадрат противника</h2>
+        <span class="sea__note">{{ surveyed() ? 'квадрат нанесён целиком' : store.enemyLosses() + ' из 10 нанесено' }}</span>
+      </div>
+      <app-board-grid
+        variant="abyss"
+        caption="Квадрат противника"
+        [board]="store.enemy()"
+        [interactive]="store.canFire()"
+        [surveyed]="surveyed()"
+        [splash]="enemySplash()"
+        (cellPick)="store.fireAt($event)"
+      />
+    </section>
+
+    <aside class="rack panel">
+      @if (deploying()) {
+        <app-deploy-panel />
+      } @else {
+        <app-battle-panel />
+      }
+    </aside>
+  </main>
+</div>
+
+@if (store.verdictOpen()) {
+  <app-result-overlay />
+}

@@ -1,0 +1,65 @@
+name: Проверка и публикация
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Страницам нужны эти права, чтобы забрать собранный артефакт.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Параллельные публикации отменяем: в эфире должна быть последняя сборка.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Сборка и тесты
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      # Включает Pages сам, чтобы не лезть руками в настройки репозитория.
+      - uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - run: npm ci
+
+      - name: Тесты
+        run: npm test -- --run
+
+      # Ворота покрытия сюда добавятся в фазе 3: общий порог 70% пока недостижим,
+      # и шаг только красил бы пайплайн, не пуская сборку в эфир.
+
+      - name: Симуляция противника
+        run: npm run test:sim
+
+      # base-href подставляется из имени репозитория: на Pages игра живёт
+      # не в корне домена, а в подкаталоге, и без этого не найдёт свои файлы.
+      - name: Сборка
+        run: npm run build -- --base-href "/${{ github.event.repository.name }}/"
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist/sea-battle/browser
+
+  deploy:
+    name: Публикация
+    needs: check
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

@@ -1,0 +1,192 @@
+/* ── Морской бой ── design tokens & global chrome ──────────────────────────
+   Two materials: unsurveyed water (abyss) and charted water (paper).
+   Everything else is instrument chrome in brass.
+   ------------------------------------------------------------------------ */
+
+:root {
+  /* water */
+  --abyss: #071119;
+  --abyss-2: #0b1b26;
+  --abyss-3: #0f2634;
+  --prussian: #143950;
+  --prussian-2: #1e5573;
+
+  /* paper */
+  --chart: #ddd3b7;
+  --chart-2: #cabd99;
+  --chart-3: #b7a87f;
+  --sepia: #8a7a55;
+  --ink: #14384f;
+  --ink-soft: rgba(20, 56, 79, 0.34);
+
+  /* signals */
+  --signal: #e0472b;
+  --signal-glow: #ff7a4d;
+  --brass: #c99a3e;
+  --brass-dim: #7d6128;
+  --foam: #9fd9e3;
+
+  --paper-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+
+  --display: 'Forum', 'Georgia', serif;
+  --label: 'PT Sans Narrow', 'Arial Narrow', sans-serif;
+  --data: 'IBM Plex Mono', ui-monospace, 'Consolas', monospace;
+
+  --rail: 1px solid rgba(201, 154, 62, 0.28);
+  --shadow-deep: 0 24px 60px -24px rgba(0, 0, 0, 0.9);
+
+  color-scheme: dark;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  background:
+    radial-gradient(120% 80% at 50% -10%, rgba(30, 85, 115, 0.35), transparent 60%),
+    radial-gradient(90% 60% at 90% 110%, rgba(201, 154, 62, 0.08), transparent 60%),
+    var(--abyss);
+  color: #d6e4ea;
+  font-family: var(--label);
+  font-size: 16px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* the whole page sits under a faint hydrographic ruling */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    repeating-linear-gradient(0deg, rgba(159, 217, 227, 0.045) 0 1px, transparent 1px 88px),
+    repeating-linear-gradient(90deg, rgba(159, 217, 227, 0.045) 0 1px, transparent 1px 88px);
+  mask-image: radial-gradient(120% 90% at 50% 0%, #000 20%, transparent 85%);
+}
+
+h1,
+h2,
+h3 {
+  margin: 0;
+  font-weight: 400;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+
+:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 2px;
+}
+
+/* ── shared chrome ─────────────────────────────────────────────────────── */
+
+.eyebrow {
+  font-family: var(--data);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--brass);
+}
+
+.panel {
+  position: relative;
+  background: linear-gradient(180deg, rgba(15, 38, 52, 0.9), rgba(7, 17, 25, 0.9));
+  border: var(--rail);
+  border-radius: 2px;
+  box-shadow: var(--shadow-deep);
+}
+
+.btn {
+  --btn-fg: #e8dfc8;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45em;
+  padding: 0.62em 1.05em;
+  font-family: var(--label);
+  font-size: 14px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--btn-fg);
+  background: linear-gradient(180deg, rgba(201, 154, 62, 0.14), rgba(201, 154, 62, 0.04));
+  border: 1px solid rgba(201, 154, 62, 0.38);
+  border-radius: 1px;
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease,
+    transform 0.12s ease;
+}
+
+.btn:hover:not(:disabled) {
+  background: linear-gradient(180deg, rgba(201, 154, 62, 0.3), rgba(201, 154, 62, 0.1));
+  border-color: var(--brass);
+}
+
+.btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.btn:disabled {
+  opacity: 0.34;
+  cursor: not-allowed;
+}
+
+.btn--primary {
+  --btn-fg: #101a12;
+  background: linear-gradient(180deg, #dcb35a, #b3862f);
+  border-color: #e6c47a;
+  font-weight: 700;
+}
+
+.btn--primary:hover:not(:disabled) {
+  background: linear-gradient(180deg, #ecc670, #c1922f);
+}
+
+/* Пока флот не собран, кнопка не притворяется готовой к нажатию. */
+.btn--primary:disabled {
+  opacity: 1;
+  background: none;
+  border-color: rgba(201, 154, 62, 0.22);
+  color: rgba(214, 228, 234, 0.4);
+  font-weight: 400;
+}
+
+.btn--ghost {
+  background: none;
+  border-color: rgba(159, 217, 227, 0.22);
+  color: #a9c3ce;
+}
+
+.btn--ghost:hover:not(:disabled) {
+  background: rgba(159, 217, 227, 0.08);
+  border-color: rgba(159, 217, 227, 0.5);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

@@ -1,0 +1,203 @@
+:host {
+  position: relative;
+  z-index: 1;
+  display: block;
+}
+
+.deck {
+  max-width: 1640px;
+  margin: 0 auto;
+  padding: clamp(1rem, 3vw, 2.2rem) clamp(0.8rem, 3vw, 2rem) 3rem;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(0.9rem, 2vw, 1.4rem);
+}
+
+/* ── шапка ─────────────────────────────────────────────────────────────── */
+
+.masthead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 0.9rem;
+  border-bottom: 1px solid rgba(201, 154, 62, 0.28);
+}
+
+.brand .eyebrow {
+  margin: 0 0 0.2rem;
+}
+
+h1 {
+  font-family: var(--display);
+  font-size: clamp(2rem, 7vw, 4.6rem);
+  line-height: 0.9;
+  letter-spacing: 0.12em;
+  /* на узком экране заголовок переносится, а не вылезает за поля */
+  overflow-wrap: break-word;
+  text-transform: uppercase;
+  color: #f2ead6;
+  text-shadow: 0 0 60px rgba(201, 154, 62, 0.25);
+}
+
+.chrome {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.chrome .btn {
+  font-size: 12px;
+  padding: 0.5em 0.85em;
+}
+
+/* ── латунная рейка со статусом ────────────────────────────────────────── */
+
+.rail {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem 1rem;
+  margin: 0;
+  padding: 0.6rem 0.95rem;
+  background: linear-gradient(90deg, rgba(201, 154, 62, 0.16), rgba(201, 154, 62, 0.03) 60%, transparent);
+  border-left: 3px solid var(--brass);
+}
+
+.rail__turn {
+  font-family: var(--data);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--brass);
+  white-space: nowrap;
+}
+
+.rail__turn.theirs {
+  color: var(--signal-glow);
+  animation: alarm 1.3s ease-in-out infinite;
+}
+
+@keyframes alarm {
+  50% {
+    opacity: 0.42;
+  }
+}
+
+.rail__msg {
+  font-size: 16px;
+  color: #dfeaef;
+}
+
+.rail__link {
+  font-family: var(--data);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--brass);
+  border-bottom: 1px solid rgba(201, 154, 62, 0.4);
+  padding-bottom: 1px;
+}
+
+.rail__link:hover {
+  border-bottom-color: var(--brass);
+}
+
+/* ── два моря и стойка приборов ────────────────────────────────────────── */
+
+.theatre {
+  display: grid;
+  gap: clamp(0.9rem, 2vw, 1.6rem);
+  grid-template-columns: 1fr;
+}
+
+.sea {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.sea__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.6rem;
+  padding-bottom: 0.3rem;
+  border-bottom: 1px solid rgba(159, 217, 227, 0.14);
+}
+
+.sea__head h2 {
+  font-family: var(--display);
+  font-size: clamp(1.05rem, 2.2vw, 1.4rem);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #e9f1f4;
+}
+
+.sea--home .sea__head h2 {
+  color: var(--chart);
+}
+
+.sea__note {
+  font-family: var(--data);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(197, 216, 224, 0.45);
+  white-space: nowrap;
+}
+
+.rack {
+  container-type: inline-size;
+  padding: 1.1rem;
+  min-width: 0;
+}
+
+/* Во время расстановки работа идёт на своей карте — она идёт первой.
+   В бою первым нужен квадрат противника. */
+.sea--home {
+  order: 2;
+}
+.sea--away {
+  order: 1;
+}
+.rack {
+  order: 3;
+}
+
+.phase-deploy .sea--home {
+  order: 1;
+}
+.phase-deploy .sea--away {
+  order: 2;
+}
+
+@media (min-width: 820px) {
+  .theatre {
+    grid-template-columns: 1fr 1fr;
+  }
+  .sea--home {
+    order: 1;
+  }
+  .sea--away {
+    order: 2;
+  }
+  .rack {
+    order: 3;
+    grid-column: 1 / -1;
+  }
+}
+
+@media (min-width: 1180px) {
+  .theatre {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(19rem, 22rem);
+    align-items: start;
+  }
+  .rack {
+    grid-column: auto;
+    position: sticky;
+    top: 1.2rem;
+  }
+}

@@ -1,0 +1,93 @@
+<div class="frame">
+  <div class="corner" aria-hidden="true"></div>
+
+  <div class="gutter gutter--cols" aria-hidden="true">
+    @for (c of cols; track c; let i = $index) {
+      <span [class.lit]="crosshair()?.col === i">{{ c }}</span>
+    }
+  </div>
+
+  <div class="gutter gutter--rows" aria-hidden="true">
+    @for (r of rows; track r; let i = $index) {
+      <span [class.lit]="crosshair()?.row === i">{{ r }}</span>
+    }
+  </div>
+
+  <div
+    class="water"
+    role="grid"
+    [attr.aria-label]="caption()"
+    (pointerleave)="onLeave()"
+    (contextmenu)="onContext($event)"
+    (keydown)="onKey($event)"
+  >
+    @if (variant() === 'chart') {
+      <svg class="contours" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+        <path d="M -4 22 C 18 14, 34 30, 52 24 S 84 10, 104 20" />
+        <path d="M -4 58 C 22 50, 30 70, 55 62 S 82 52, 104 60" />
+        <path d="M -4 86 C 20 80, 40 94, 62 86 S 88 78, 104 88" />
+      </svg>
+      <div class="soundings" aria-hidden="true">
+        @for (s of soundings; track $index) {
+          <span [style.left.%]="s[0]" [style.top.%]="s[1]">{{ s[2] }}</span>
+        }
+      </div>
+      <svg class="rose" viewBox="0 0 100 100" aria-hidden="true">
+        <circle cx="50" cy="50" r="34" />
+        <circle cx="50" cy="50" r="23" />
+        <path class="needle" d="M50 8 L57 50 L50 92 L43 50 Z" />
+        <path class="needle needle--cross" d="M8 50 L50 43 L92 50 L50 57 Z" />
+      </svg>
+    } @else {
+      <div class="sweep" aria-hidden="true"></div>
+    }
+
+    @for (row of gridRows; track $index) {
+      <div class="row" role="row">
+        @for (i of row; track i) {
+          <button
+            #cellRef
+            type="button"
+            class="cell"
+            role="gridcell"
+            [class.miss]="state(i) === 'miss'"
+            [class.hit]="state(i) === 'hit'"
+            [class.sunk]="state(i) === 'sunk'"
+            [class.ghosted]="ghostCells().has(i)"
+            [class.cross]="isCross(i)"
+            [disabled]="!interactive()"
+            [attr.tabindex]="focusIdx() === i ? 0 : -1"
+            [attr.aria-label]="label(i)"
+            (pointerenter)="onEnter(i)"
+            (focus)="onFocus(i)"
+            (click)="onPick(i)"
+          >
+            <span class="mark" aria-hidden="true"></span>
+          </button>
+        }
+      </div>
+    }
+
+    @for (ship of hulls(); track ship.id; let i = $index) {
+      <div class="hull" [class.lost]="ship.hits >= ship.size" [style]="shipStyle(ship, i)" aria-hidden="true">
+        <div class="hull__glyph" [class.turned]="ship.orient === 'v'" [style]="glyphStyle(ship)">
+          <app-ship-glyph [size]="ship.size" />
+        </div>
+      </div>
+    }
+
+    @if (ghost(); as g) {
+      <div class="ghost" [class.blocked]="!g.valid" [style]="ghostStyle()" aria-hidden="true">
+        <div class="hull__glyph" [class.turned]="g.orient === 'v'" [style]="ghostGlyphStyle()">
+          <app-ship-glyph [size]="g.cells.length" />
+        </div>
+      </div>
+    }
+
+    @for (s of splashes(); track s.id) {
+      <div class="splash" [class]="'splash--' + s.result" [style]="splashStyle(s.cell)" aria-hidden="true">
+        <i></i><i></i><i></i>
+      </div>
+    }
+  </div>
+</div>
