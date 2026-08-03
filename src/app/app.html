@@ -19,7 +19,11 @@
   </header>
 
   <p class="rail" aria-live="polite">
-    <span class="rail__turn" [class.theirs]="fighting() && store.turn() === 'enemy'">{{ turnWord() }}</span>
+    <!-- тревожно мигать имеет право только настоящий ход противника: после
+         поражения turn навсегда остаётся 'enemy', и «Бой окончен» мигал бы тоже -->
+    <span class="rail__turn" [class.theirs]="store.phase() === 'battle' && store.turn() === 'enemy'">
+      {{ turnWord() }}
+    </span>
     <span class="rail__msg">{{ store.message() }}</span>
     @if (surveyed() && !store.verdictOpen()) {
       <button type="button" class="rail__link" (click)="store.verdictOpen.set(true)">Показать итог</button>

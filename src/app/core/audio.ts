@@ -4,9 +4,33 @@ import { Injectable, signal } from '@angular/core';
  * Весь звук синтезируется на месте — ни одного загружаемого файла.
  * Контекст просыпается на первом клике, как того требует браузер.
  */
+/**
+ * Хранилище настроек может быть недоступно: в песочнице `sandbox="allow-scripts"`
+ * или при запрете данных сайта обращение к нему бросает SecurityError. Звук —
+ * не та причина, по которой игра имеет право не открыться, поэтому отказ глотаем.
+ */
+/** Громкость общей шины. */
+const BUS_VOLUME = 0.55;
+
+function readMuted(): boolean {
+  try {
+    return localStorage.getItem('sb.muted') === '1';
+  } catch {
+    return false;
+  }
+}
+
+function rememberMuted(value: boolean): void {
+  try {
+    localStorage.setItem('sb.muted', value ? '1' : '0');
+  } catch {
+    // настройка не переживёт перезагрузку — не повод ломать партию
+  }
+}
+
 @Injectable({ providedIn: 'root' })
 export class AudioService {
-  readonly muted = signal(localStorage.getItem('sb.muted') === '1');
+  readonly muted = signal(readMuted());
 
   private ctx: AudioContext | null = null;
   private bus: GainNode | null = null;
@@ -15,8 +39,30 @@ export class AudioService {
   toggle(): void {
     const next = !this.muted();
     this.muted.set(next);
-    localStorage.setItem('sb.muted', next ? '1' : '0');
-    if (!next) this.blip(660, 0.08, 'triangle', 0.12);
+    rememberMuted(next);
+
+    if (next) this.silenceNow();
+    else this.restoreVolume();
+  }
+
+  /**
+   * Отсечка в `wake()` работает только при планировании: уже назначенные узлы
+   * доиграют своё. Стон потопления тянется 1.3 с — столько тишины после нажатия
+   * «звук выкл» никто не ждёт, поэтому глушим саму шину.
+   */
+  private silenceNow(): void {
+    if (!this.ctx || !this.bus) return;
+    const t = this.ctx.currentTime;
+    this.bus.gain.cancelScheduledValues(t);
+    this.bus.gain.setValueAtTime(0.0001, t);
+  }
+
+  private restoreVolume(): void {
+    if (this.ctx && this.bus) {
+      this.bus.gain.cancelScheduledValues(this.ctx.currentTime);
+      this.bus.gain.setValueAtTime(BUS_VOLUME, this.ctx.currentTime);
+    }
+    this.blip(660, 0.08, 'triangle', 0.12);
   }
 
   /** Щелчок при постановке корабля на карту. */
@@ -160,7 +206,7 @@ export class AudioService {
       if (!Ctor) return null;
       this.ctx = new Ctor();
       this.bus = this.ctx.createGain();
-      this.bus.gain.value = 0.55;
+      this.bus.gain.value = BUS_VOLUME;
       this.bus.connect(this.ctx.destination);
     }
     if (this.ctx.state === 'suspended') void this.ctx.resume();
