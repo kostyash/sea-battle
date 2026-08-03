@@ -89,8 +89,7 @@
               "src/app/**/*.test.ts",
               "src/testing/**"
             ],
-            "coverageReporters": ["text-summary", "json-summary", "html"],
-            "reporters": ["default"]
+            "coverageReporters": ["text-summary", "json-summary", "html"]
           }
         },
         "serve": {

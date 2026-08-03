@@ -12,6 +12,9 @@ const gate = process.env['SB_COVERAGE_GATE'] === '1';
 
 export default defineConfig({
   test: {
+    // В CI логи шага недоступны без токена, поэтому просим vitest выкладывать
+    // падения аннотациями — их видно через публичный API проверок.
+    reporters: process.env['CI'] ? ['default', 'github-actions'] : ['default'],
     coverage: {
       provider: 'v8',
       thresholds: gate
