@@ -47,8 +47,8 @@ describe('App', () => {
   describe('расстановка', () => {
     it('своя карта открыта, чужая закрыта', () => {
       render();
-      expect(homeCells().every((b) => b.disabled)).toBe(false);
-      expect(enemyCells().every((b) => b.disabled)).toBe(true);
+      expect(homeCells().every((b) => b.getAttribute('aria-disabled') === 'false')).toBe(true);
+      expect(enemyCells().every((b) => b.getAttribute('aria-disabled') === 'true')).toBe(true);
     });
 
     it('щелчок по своей карте ставит выбранный корабль', () => {
@@ -106,8 +106,8 @@ describe('App', () => {
 
     it('чужая карта открывается, своя закрывается', () => {
       toBattle();
-      expect(enemyCells().every((b) => b.disabled)).toBe(false);
-      expect(homeCells().every((b) => b.disabled)).toBe(true);
+      expect(enemyCells().every((b) => b.getAttribute('aria-disabled') === 'false')).toBe(true);
+      expect(homeCells().every((b) => b.getAttribute('aria-disabled') === 'true')).toBe(true);
     });
 
     it('стойка сменилась на донесение', () => {
@@ -134,7 +134,7 @@ describe('App', () => {
       fixture.detectChanges();
 
       expect(store.turn()).toBe('enemy');
-      expect(enemyCells().every((b) => b.disabled)).toBe(true);
+      expect(enemyCells().every((b) => b.getAttribute('aria-disabled') === 'true')).toBe(true);
     });
 
     it('когда ход вернулся, квадрат снова открыт', () => {
@@ -145,7 +145,7 @@ describe('App', () => {
       fixture.detectChanges();
 
       expect(store.turn()).toBe('player');
-      expect(enemyCells().every((b) => b.disabled)).toBe(false);
+      expect(enemyCells().every((b) => b.getAttribute('aria-disabled') === 'false')).toBe(true);
     });
 
     it('строка состояния объявляет, чей ход', () => {

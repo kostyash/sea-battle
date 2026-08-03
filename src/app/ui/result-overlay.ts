@@ -1,13 +1,22 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  afterNextRender,
+  computed,
+  inject,
+  viewChild,
+} from '@angular/core';
 import { GameStore } from '../core/game-store';
 import { difficultyName } from '../ai/levels';
 
 @Component({
   selector: 'app-result-overlay',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: { '(document:keydown.escape)': 'onEscape()' },
   template: `
     <div class="scrim" role="dialog" aria-modal="true" aria-labelledby="verdict">
-      <div class="cartouche" [class.won]="won()">
+      <div #card class="cartouche" [class.won]="won()" tabindex="-1">
         <p class="eyebrow">{{ won() ? 'Квадрат зачищен' : 'Квадрат потерян' }}</p>
         <h2 id="verdict">{{ won() ? 'Победа' : 'Поражение' }}</h2>
         <p class="line">{{ store.message() }}</p>
@@ -172,4 +181,17 @@ export class ResultOverlay {
   protected readonly store = inject(GameStore);
   protected readonly won = computed(() => this.store.winner() === 'player');
   protected readonly levelName = computed(() => difficultyName(this.store.difficulty()));
+
+  private readonly card = viewChild.required<ElementRef<HTMLElement>>('card');
+
+  constructor() {
+    // Карточка объявлена модальной — значит, фокус обязан в неё переехать,
+    // иначе Tab уводит в шапку, уже скрытую от скринридера через aria-modal.
+    afterNextRender(() => this.card().nativeElement.focus());
+  }
+
+  /** Escape убирает карточку так же, как «осмотреть квадрат». */
+  protected onEscape(): void {
+    this.store.closeVerdict();
+  }
 }

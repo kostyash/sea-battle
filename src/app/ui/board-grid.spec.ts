@@ -62,14 +62,40 @@ describe('BoardGrid', () => {
   });
 
   describe('интерактивность', () => {
-    it('неактивное поле блокирует все клетки', () => {
+    it('неактивное поле помечает клетки как недоступные', () => {
       render(emptyBoard('player'), { interactive: false });
-      expect(cellButtons(fixture).every((b) => b.disabled)).toBe(true);
+      expect(cellButtons(fixture).every((b) => b.getAttribute('aria-disabled') === 'true')).toBe(
+        true,
+      );
+    });
+
+    it('неактивные клетки остаются фокусируемыми — иначе прицел улетает', () => {
+      render(emptyBoard('player'), { interactive: false });
+      // `disabled` снимал бы фокус с кнопки, и после каждого выстрела
+      // клавиатурный прицел терялся бы на body
+      expect(cellButtons(fixture).some((b) => b.disabled)).toBe(false);
     });
 
     it('активное поле открывает клетки', () => {
       render(emptyBoard('player'), { interactive: true });
-      expect(cellButtons(fixture).every((b) => b.disabled)).toBe(false);
+      expect(cellButtons(fixture).every((b) => b.getAttribute('aria-disabled') === 'false')).toBe(
+        true,
+      );
+    });
+
+    it('фокус переживает выключение и включение поля', () => {
+      render(emptyBoard('player'), { interactive: true });
+      const cell = cellButtons(fixture)[idx(3, 3)];
+      cell.focus();
+      expect(document.activeElement).toBe(cell);
+
+      fixture.componentRef.setInput('interactive', false);
+      fixture.detectChanges();
+      expect(document.activeElement).toBe(cell);
+
+      fixture.componentRef.setInput('interactive', true);
+      fixture.detectChanges();
+      expect(document.activeElement).toBe(cell);
     });
 
     it('щелчок отдаёт номер клетки', () => {
@@ -81,13 +107,24 @@ describe('BoardGrid', () => {
       expect(picked).toEqual([idx(3, 7)]);
     });
 
-    it('заблокированная клетка щелчок не отдаёт', () => {
+    it('недоступная клетка щелчок не отдаёт', () => {
       render(emptyBoard('player'), { interactive: false });
       const picked: number[] = [];
       fixture.componentInstance.cellPick.subscribe((c) => picked.push(c));
 
       cellButtons(fixture)[0].click();
       expect(picked).toEqual([]);
+    });
+
+    it('недоступное поле не водит прицел стрелками', () => {
+      render(emptyBoard('player'), { interactive: false });
+      cellButtons(fixture)[0].focus();
+      fixture.nativeElement
+        .querySelector('[role="grid"]')
+        .dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+      fixture.detectChanges();
+
+      expect(cellButtons(fixture).findIndex((b) => b.getAttribute('tabindex') === '0')).toBe(0);
     });
 
     it('правая кнопка просит поворот и не открывает меню', () => {

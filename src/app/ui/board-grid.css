@@ -194,7 +194,9 @@
   transition: background-color 0.12s ease;
 }
 
-.cell:disabled {
+/* Клетка не `disabled`, а `aria-disabled`: отключённая кнопка теряет фокус,
+   и клавиатурный прицел улетал бы после каждого выстрела. */
+.cell.inert {
   cursor: default;
 }
 
@@ -206,7 +208,7 @@
   background-color: rgba(20, 56, 79, 0.06);
 }
 
-:host(.is-live) .cell:hover:not(:disabled) {
+:host(.is-live) .cell:hover:not(.inert) {
   background-color: rgba(201, 154, 62, 0.16);
   box-shadow:
     inset 0 0 0 1px var(--brass),

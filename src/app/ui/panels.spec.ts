@@ -62,6 +62,15 @@ describe('состав флота', () => {
     expect(buttons(fixture, '.slot')[1].classList).toContain('picked');
   });
 
+  it('выбор объявлен для чтения с экрана, а не только цветом', () => {
+    buttons(fixture, '.slot')[1].click();
+    fixture.detectChanges();
+
+    const slots = buttons(fixture, '.slot');
+    expect(slots[1].getAttribute('aria-pressed')).toBe('true');
+    expect(slots.filter((b) => b.getAttribute('aria-pressed') === 'true')).toHaveLength(1);
+  });
+
   it('кнопка поворота показывает текущую ориентацию', () => {
     expect(text(fixture)).toContain('Вдоль');
     store.rotate();
@@ -217,6 +226,31 @@ describe('итоговая карточка', () => {
 
     expect(store.phase()).toBe('deploy');
     expect(store.fleetReady()).toBe(true);
+  });
+
+  it('фокус переезжает в карточку — она объявлена модальной', () => {
+    for (const cell of store.enemy().ships.flatMap((s) => s.cells)) {
+      store.fireAt(cell);
+      vi.advanceTimersByTime(1000);
+    }
+    vi.advanceTimersByTime(5000);
+
+    const fixture = finish();
+    const card = (fixture.nativeElement as HTMLElement).querySelector('.cartouche');
+    expect(document.activeElement).toBe(card);
+  });
+
+  it('Escape убирает карточку', () => {
+    for (const cell of store.enemy().ships.flatMap((s) => s.cells)) {
+      store.fireAt(cell);
+      vi.advanceTimersByTime(1000);
+    }
+    vi.advanceTimersByTime(5000);
+    finish();
+
+    expect(store.verdictOpen()).toBe(true);
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    expect(store.verdictOpen()).toBe(false);
   });
 
   it('«осмотреть квадрат» убирает карточку, не начиная новую партию', () => {

@@ -17,6 +17,7 @@ import { ShipGlyph } from './ship-glyph';
               type="button"
               class="slot"
               [class.picked]="store.pickedSize() === r.size"
+              [attr.aria-pressed]="store.pickedSize() === r.size"
               [disabled]="r.left === 0"
               (click)="store.pickSize(r.size)"
             >

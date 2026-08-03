@@ -158,6 +158,7 @@ export class BoardGrid {
   }
 
   protected onEnter(i: number): void {
+    if (!this.interactive()) return;
     this.hoverIdx.set(i);
     this.cellEnter.emit(i);
   }
@@ -167,7 +168,18 @@ export class BoardGrid {
     this.cellLeave.emit();
   }
 
+  /** Фокус ушёл из сетки — гасим перекрестье, иначе оно горит без прицела. */
+  protected onBlur(): void {
+    this.hoverIdx.set(null);
+  }
+
+  /**
+   * Клетки не помечаются `disabled`: браузер снимает фокус с отключённой кнопки,
+   * и после каждого выстрела клавиатурный прицел улетал на body. Вместо этого
+   * клетка остаётся фокусируемой, а действие гасится здесь.
+   */
   protected onPick(i: number): void {
+    if (!this.interactive()) return;
     this.cellPick.emit(i);
   }
 
@@ -182,6 +194,7 @@ export class BoardGrid {
    * асинхронно, и быстрые нажатия иначе теряются.
    */
   protected onKey(event: KeyboardEvent): void {
+    if (!this.interactive()) return;
     const deltas: Record<string, number> = {
       ArrowRight: 1,
       ArrowLeft: -1,
@@ -203,6 +216,7 @@ export class BoardGrid {
 
   protected onFocus(i: number): void {
     this.focusIdx.set(i);
+    if (!this.interactive()) return;
     this.hoverIdx.set(i);
     this.cellEnter.emit(i);
   }

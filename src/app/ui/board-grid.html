@@ -55,11 +55,13 @@
             [class.sunk]="state(i) === 'sunk'"
             [class.ghosted]="ghostCells().has(i)"
             [class.cross]="isCross(i)"
-            [disabled]="!interactive()"
+            [class.inert]="!interactive()"
+            [attr.aria-disabled]="!interactive()"
             [attr.tabindex]="focusIdx() === i ? 0 : -1"
             [attr.aria-label]="label(i)"
             (pointerenter)="onEnter(i)"
             (focus)="onFocus(i)"
+            (blur)="onBlur()"
             (click)="onPick(i)"
           >
             <span class="mark" aria-hidden="true"></span>
