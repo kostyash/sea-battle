@@ -26,10 +26,6 @@ describe('состав флота', () => {
     expect(TOTAL_DECKS).toBe(20);
   });
 
-  it('итоги сходятся с самим составом', () => {
-    expect(FLEET_SPEC.reduce((n, s) => n + s.count, 0)).toBe(FLEET_SHIPS);
-    expect(FLEET_SPEC.reduce((n, s) => n + s.count * s.size, 0)).toBe(TOTAL_DECKS);
-  });
 
   it('калибры перечислены от крупного к мелкому и не повторяются', () => {
     const sizes = SPEC.map((s) => s.size);

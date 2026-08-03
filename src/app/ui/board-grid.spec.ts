@@ -201,6 +201,8 @@ describe('BoardGrid', () => {
       cellButtons(fixture)[0].focus();
       const event = press('Tab');
       expect(event.defaultPrevented).toBe(false);
+      // прицел обязан остаться на месте — без этого тест держал только preventDefault
+      expect(cellButtons(fixture).findIndex((b) => b.getAttribute('tabindex') === '0')).toBe(0);
     });
   });
 

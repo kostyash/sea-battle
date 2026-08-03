@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { emptyBoard } from './board';
 import { FLEET_SHIPS, FLEET_SPEC, TOTAL_DECKS } from './fleet';
-import { Orientation, SIZE, colOf, idx, rowOf } from './grid';
+import { SIZE, colOf, idx, rowOf } from './grid';
 import {
   aura,
   canPlace,
@@ -306,9 +306,3 @@ describe('canonicalBoard — запасная расстановка', () => {
   });
 });
 
-describe('ориентации перечислены полностью', () => {
-  it('их ровно две', () => {
-    const all: Orientation[] = ['h', 'v'];
-    expect(all).toHaveLength(2);
-  });
-});

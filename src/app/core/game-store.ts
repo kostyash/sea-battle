@@ -19,6 +19,26 @@ import { afloatSizes, fire, isFleetDestroyed } from '../domain/shot';
 export type Phase = 'deploy' | 'battle' | 'over';
 
 /**
+ * Паузы между ходами. Это не украшение: за них проигрывается всплеск, ложится
+ * силуэт потопленного и читается строка состояния. Вынесены наружу, чтобы тесты
+ * крутили время по именам, а не по магическим числам, подобранным на глаз.
+ */
+export const PAUSE = {
+  /** Попадание: пауза перед тем, как снова разрешить выстрел. */
+  afterHit: 420,
+  /** Промах игрока: сколько противник «думает» перед своим залпом. */
+  enemyThinks: 950,
+  /** Промах противника: пауза перед возвратом хода игроку. */
+  turnBack: 600,
+  /** Попадание противника: пауза перед его следующим залпом. */
+  enemyVolley: 1050,
+  /** Последний залп: пауза перед объявлением итога. */
+  beforeFinish: 900,
+  /** Съёмка квадрата перед тем, как показать итоговую карточку. */
+  beforeVerdict: 1500,
+} as const;
+
+/**
  * Зерно партии. В игре берётся из энтропии, в тестах подменяется — и тогда
  * и расстановка противника, и его выстрелы повторяются в точности.
  */
@@ -243,15 +263,15 @@ export class GameStore {
     );
 
     if (isFleetDestroyed(outcome.board)) {
-      this.after(900, era, () => this.finish('player'));
+      this.after(PAUSE.beforeFinish, era, () => this.finish('player'));
       return;
     }
 
     if (outcome.result === 'miss') {
       this.turn.set('enemy');
-      this.after(950, era, () => this.enemyVolley());
+      this.after(PAUSE.enemyThinks, era, () => this.enemyVolley());
     } else {
-      this.after(420, era, () => this.busy.set(false));
+      this.after(PAUSE.afterHit, era, () => this.busy.set(false));
     }
   }
 
@@ -286,18 +306,18 @@ export class GameStore {
     }
 
     if (isFleetDestroyed(outcome.board)) {
-      this.after(900, era, () => this.finish('enemy'));
+      this.after(PAUSE.beforeFinish, era, () => this.finish('enemy'));
       return;
     }
 
     if (outcome.result === 'miss') {
-      this.after(600, era, () => {
+      this.after(PAUSE.turnBack, era, () => {
         this.turn.set('player');
         this.busy.set(false);
         this.message.set(`Противник бьёт в ${coordLabel(cell)} — мимо. Ваш ход.`);
       });
     } else {
-      this.after(1050, era, () => this.enemyVolley());
+      this.after(PAUSE.enemyVolley, era, () => this.enemyVolley());
     }
   }
 
@@ -310,7 +330,7 @@ export class GameStore {
     );
     if (winner === 'player') this.audio.victory();
     else this.audio.defeat();
-    this.after(1500, this.era, () => {
+    this.after(PAUSE.beforeVerdict, this.era, () => {
       if (!this.verdictDismissed) this.verdictOpen.set(true);
     });
   }

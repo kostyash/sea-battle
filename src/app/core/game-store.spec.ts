@@ -4,7 +4,7 @@ import { Board } from '../domain/board';
 import { FLEET_SHIPS, TOTAL_DECKS } from '../domain/fleet';
 import { SIZE, idx } from '../domain/grid';
 import { canonicalBoard } from '../domain/placement';
-import { GAME_SEED, GameStore } from './game-store';
+import { GAME_SEED, GameStore, PAUSE } from './game-store';
 
 /**
  * Хранилище живёт на таймерах: между залпами стоят паузы под анимацию.
@@ -18,6 +18,15 @@ const make = (seed = 12345): GameStore => {
 /** Прокручивает все отложенные ходы, пока партия не успокоится. */
 const settle = (ms = 20000): void => {
   vi.advanceTimersByTime(ms);
+};
+
+/**
+ * Пауза после собственного попадания — ровно столько, сколько ждёт хранилище.
+ * Раньше здесь стояло магическое 1000, подобранное между 900 и 420: любая
+ * правка анимаций ломала бы тесты сообщением «ожидался over, получен battle».
+ */
+const afterOwnHit = (): void => {
+  vi.advanceTimersByTime(PAUSE.afterHit + PAUSE.beforeFinish);
 };
 
 /** Все клетки кораблей поля — по ним бьют, чтобы гарантированно топить. */
@@ -148,7 +157,7 @@ describe('GameStore', () => {
       const store = ready();
       const target = shipCellsOf(store.enemy())[0];
       store.fireAt(target);
-      settle(1000);
+      afterOwnHit();
       expect(store.turn()).toBe('player');
       expect(store.canFire()).toBe(true);
     });
@@ -183,7 +192,7 @@ describe('GameStore', () => {
       const store = ready();
       const target = shipCellsOf(store.enemy())[0];
       store.fireAt(target);
-      settle(1000);
+      afterOwnHit();
       const shots = store.playerStats().shots;
       store.fireAt(target);
       expect(store.playerStats().shots).toBe(shots);
@@ -198,7 +207,7 @@ describe('GameStore', () => {
 
       for (const cell of shipCellsOf(store.enemy())) {
         store.fireAt(cell);
-        settle(1000);
+        afterOwnHit();
       }
       settle();
 
@@ -215,7 +224,7 @@ describe('GameStore', () => {
       store.beginBattle();
       for (const cell of shipCellsOf(store.enemy())) {
         store.fireAt(cell);
-        settle(1000);
+        afterOwnHit();
       }
       expect(store.phase()).toBe('over');
       expect(store.verdictOpen()).toBe(false);
@@ -229,7 +238,7 @@ describe('GameStore', () => {
       store.beginBattle();
       for (const cell of shipCellsOf(store.enemy())) {
         store.fireAt(cell);
-        settle(1000);
+        afterOwnHit();
       }
       store.closeVerdict();
       settle();
@@ -242,7 +251,7 @@ describe('GameStore', () => {
       store.beginBattle();
       for (const cell of shipCellsOf(store.enemy())) {
         store.fireAt(cell);
-        settle(1000);
+        afterOwnHit();
       }
       settle();
       const shots = store.playerStats().shots;
@@ -285,7 +294,7 @@ describe('GameStore', () => {
 
       const hit = shipCellsOf(store.enemy())[0];
       store.fireAt(hit);
-      settle(1000);
+      afterOwnHit();
       expect(store.playerStats()).toMatchObject({ shots: 1, hits: 1, accuracy: 100 });
 
       const miss = store.enemy().shots.findIndex(
@@ -306,7 +315,7 @@ describe('GameStore', () => {
       store.beginBattle();
       const hit = shipCellsOf(store.enemy())[0];
       store.fireAt(hit);
-      settle(1000);
+      afterOwnHit();
 
       const top = store.log()[0];
       expect(top.side).toBe('player');
@@ -336,7 +345,7 @@ describe('GameStore', () => {
       store.autoPlace();
       store.beginBattle();
       store.fireAt(shipCellsOf(store.enemy())[0]);
-      settle(1000);
+      afterOwnHit();
 
       store.newGame();
 

@@ -15,14 +15,13 @@ function code(src: string): string {
   return src.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/(^|[^:])\/\/.*$/gm, '$1');
 }
 
+/**
+ * Ошибку чтения намеренно НЕ глотаем: раньше `catch { return [] }` означал,
+ * что после переименования каталога запрет проходил вхолостую — стражу
+ * нечего было проверять, и он молча зеленел.
+ */
 function sourceFiles(dir: string): string[] {
-  let entries: string[];
-  try {
-    entries = readdirSync(dir, { recursive: true, encoding: 'utf-8' });
-  } catch {
-    return []; // каталога ещё нет — запрет выполняется сам собой
-  }
-  return entries
+  return readdirSync(dir, { recursive: true, encoding: 'utf-8' })
     .map((e) => join(dir, e))
     .filter((p) => p.endsWith('.ts') && !p.endsWith('.spec.ts'));
 }
@@ -43,7 +42,11 @@ describe('случайность только через Rng', () => {
     expect(code(`/* и ${FORBIDDEN} в блоке тоже */`)).not.toContain(FORBIDDEN);
   });
 
-  it('в домене вообще есть что проверять', () => {
-    expect(sourceFiles(join(process.cwd(), 'src/app/domain')).length).toBeGreaterThan(0);
-  });
+  // Страховка на оба каталога, а не только на домен: иначе исчезнувший `ai/`
+  // не заметил бы никто, а запрет «выполнялся» бы на пустом множестве файлов.
+  for (const root of ROOTS) {
+    it(`${root} вообще существует и содержит исходники`, () => {
+      expect(sourceFiles(join(process.cwd(), root)).length).toBeGreaterThan(0);
+    });
+  }
 });

@@ -69,20 +69,29 @@ describe('карта плотности', () => {
     expect(score[idx(6, 5)]).toBe(0);
   });
 
-  it('калибр, которого не осталось на плаву, не считается', () => {
-    // четырёхпалубный требует прямой из четырёх клеток; без него узкая щель бесполезна
+  it('в щель, куда калибр не влезает, он веса не приносит', () => {
+    // Щель шириной 3 по горизонтали: столбцы 5..7, отгороженные промахами.
+    // По вертикали её тоже надо закрыть, иначе четырёхпалубный встанет поперёк.
     const walls: Record<number, CellState> = {};
     for (let r = 0; r < 10; r++) {
       walls[idx(r, 4)] = 'miss';
-      walls[idx(r, 9)] = 'miss';
+      walls[idx(r, 8)] = 'miss';
+    }
+    for (let c = 5; c <= 7; c++) {
+      walls[idx(1, c)] = 'miss';
     }
     const shots = withMarks(walls);
-    const withBig = densityMap(shots, [4]).score;
-    const withSmall = densityMap(shots, [1]).score;
-    expect(withBig[idx(0, 0)]).toBeGreaterThan(0);
-    expect(withSmall[idx(0, 0)]).toBeGreaterThan(0);
-    // в щели шириной 4 (столбцы 5..8) четырёхпалубный встаёт только поперёк
-    expect(withBig[idx(0, 5)]).toBeGreaterThan(0);
+    const gap = idx(0, 6); // середина щели 3x1 в верхнем ряду
+
+    // трёхпалубный сюда встаёт, четырёхпалубному места нет ни вдоль, ни поперёк
+    expect(densityMap(shots, [3]).score[gap]).toBeGreaterThan(0);
+    expect(densityMap(shots, [4]).score[gap]).toBe(0);
+  });
+
+  it('чем больше однотипных калибров на плаву, тем выше вес клетки', () => {
+    const one = densityMap(blank(), [3]).score[idx(4, 4)];
+    const two = densityMap(blank(), [3, 3]).score[idx(4, 4)];
+    expect(two).toBe(one * 2);
   });
 
   it('пустой список калибров даёт нулевую карту', () => {

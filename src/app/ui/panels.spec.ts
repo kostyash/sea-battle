@@ -210,8 +210,51 @@ describe('итоговая карточка', () => {
     const fixture = finish();
     const body = text(fixture);
     expect(body).toMatch(/Победа/i);
-    expect(body).toMatch(/Точность/i);
-    expect(body).toMatch(/Потоплено/i);
+
+    // сверяем ЗНАЧЕНИЯ с хранилищем: «Точность»/«Потоплено» — статические
+    // подписи, они не могут упасть и потому ничего не держат
+    const values = Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll('.figures dd'),
+    ).map((dd) => dd.textContent?.trim() ?? '');
+
+    expect(values[0]).toBe(String(store.playerStats().shots));
+    expect(values[1]).toBe(`${store.playerStats().accuracy}%`);
+    expect(values[2]).toContain(String(store.enemyLosses()));
+    expect(store.enemyLosses()).toBe(10);
+  });
+
+  it('после поражения объявляет поражение и считает потери', () => {
+    // игрок только мажет — противник спокойно доигрывает своё
+    for (let n = 0; n < 400 && store.phase() === 'battle'; n++) {
+      if (store.canFire()) {
+        const miss = store
+          .enemy()
+          .shots.findIndex((s, i) => s === 'unknown' && store.enemy().shipAt[i] === -1);
+        if (miss === -1) break;
+        store.fireAt(miss);
+      }
+      vi.advanceTimersByTime(3000);
+    }
+    vi.advanceTimersByTime(5000);
+
+    expect(store.winner()).toBe('enemy');
+    const fixture = finish();
+    expect(text(fixture)).toMatch(/Поражение/i);
+    expect(store.playerLosses()).toBe(10);
+  });
+
+  it('«расставить заново» возвращает к пустой расстановке', () => {
+    for (const cell of store.enemy().ships.flatMap((s) => s.cells)) {
+      store.fireAt(cell);
+      vi.advanceTimersByTime(1000);
+    }
+    vi.advanceTimersByTime(5000);
+
+    const fixture = finish();
+    buttons(fixture, '.btn').find((b) => b.textContent?.includes('Расставить заново'))!.click();
+
+    expect(store.phase()).toBe('deploy');
+    expect(store.fleetReady()).toBe(false);
   });
 
   it('кнопка «ещё бой» начинает новую партию с готовым флотом', () => {

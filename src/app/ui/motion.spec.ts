@@ -16,7 +16,14 @@ function styleFiles(dir: string): string[] {
     .filter((path) => path.endsWith('.css'));
 }
 
-const read = (path: string): string => readFileSync(path, 'utf-8');
+/**
+ * Закомментированное правило не действует. Без вырезания комментариев этот
+ * страж оставался бы зелёным, даже если весь блок отключения движения
+ * закомментировать целиком — ровно та дыра, что была в no-global-random.spec.
+ */
+const stripComments = (css: string): string => css.replace(/\/\*[\s\S]*?\*\//g, ' ');
+
+const read = (path: string): string => stripComments(readFileSync(path, 'utf-8'));
 
 describe('движение отключается по просьбе системы', () => {
   it('глобальные стили гасят анимации и переходы', () => {
@@ -48,6 +55,15 @@ describe('движение отключается по просьбе систе
   it('в проекте вообще есть что глушить', () => {
     const withMotion = styleFiles(STYLE_ROOT).filter((path) => /@keyframes/.test(read(path)));
     expect(withMotion.length).toBeGreaterThan(0);
+  });
+
+  it('сам страж не считает закомментированное правило действующим', () => {
+    expect(stripComments('/* @media (prefers-reduced-motion: reduce) {} */')).not.toContain(
+      'prefers-reduced-motion',
+    );
+    expect(stripComments('@media (prefers-reduced-motion: reduce) {}')).toContain(
+      'prefers-reduced-motion',
+    );
   });
 });
 
