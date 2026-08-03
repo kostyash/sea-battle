@@ -28,11 +28,8 @@ jobs:
           node-version: 22
           cache: npm
 
-      # Включает Pages сам, чтобы не лезть руками в настройки репозитория.
-      - uses: actions/configure-pages@v5
-        with:
-          enablement: true
-
+      # Включать Pages из workflow нельзя: токену действий не хватает прав, пока
+      # источник не выставлен вручную. Настройки → Pages → Source: GitHub Actions.
       - run: npm ci
 
       - name: Тесты
