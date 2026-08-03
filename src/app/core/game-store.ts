@@ -1,4 +1,4 @@
-import { Injectable, computed, inject, signal } from '@angular/core';
+import { InjectionToken, Injectable, computed, inject, signal } from '@angular/core';
 import { chooseShot } from '../ai/opponent';
 import { Difficulty } from '../ai/levels';
 import { AudioService } from './audio';
@@ -17,6 +17,15 @@ import { entropySeed, seededRng } from '../domain/rng';
 import { afloatSizes, fire, isFleetDestroyed } from '../domain/shot';
 
 export type Phase = 'deploy' | 'battle' | 'over';
+
+/**
+ * Зерно партии. В игре берётся из энтропии, в тестах подменяется — и тогда
+ * и расстановка противника, и его выстрелы повторяются в точности.
+ */
+export const GAME_SEED = new InjectionToken<number>('зерно партии', {
+  providedIn: 'root',
+  factory: entropySeed,
+});
 
 export interface LogEntry {
   id: number;
@@ -42,11 +51,8 @@ interface Tally {
 export class GameStore {
   readonly audio = inject(AudioService);
 
-  /**
-   * Единственный источник случайности партии. Засеян энтропией, но засеян —
-   * значит, партию можно воспроизвести, подменив зерно в тестах.
-   */
-  private rng = seededRng(entropySeed());
+  /** Единственный источник случайности партии — см. `GAME_SEED`. */
+  private rng = seededRng(inject(GAME_SEED));
 
   /* ── состояние партии ───────────────────────────────────────────────── */
 
