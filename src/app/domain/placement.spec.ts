@@ -278,7 +278,9 @@ describe('randomBoard', () => {
       expect(violations(b.ships.map((s) => s.cells), b.shipAt)).toEqual([]);
       expect(b.shots.every((v) => v === 'unknown')).toBe(true);
     }
-  });
+    // тысяча расстановок с полной проверкой — секунды даже на быстрой машине,
+    // а на бегунке CI и все пять, поэтому срок задан явно
+  }, 30_000);
 });
 
 describe('randomBoard без запаса попыток', () => {
