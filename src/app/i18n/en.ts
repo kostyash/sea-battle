@@ -93,6 +93,7 @@ export const EN = {
   'result.lostEyebrow': 'Square lost',
   'result.won': 'Victory',
   'result.lost': 'Defeat',
+  'result.benchmark': 'The Admiral would have taken {n}',
   'result.against': 'Opponent — {text}',
   'action.rematch': 'Another battle',
   'action.redeploy': 'Deploy again',

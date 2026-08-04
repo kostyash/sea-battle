@@ -99,6 +99,54 @@
   stroke-dasharray: 2 1.4;
 }
 
+/* ── the chart draws itself, once ────────────────────────────────────────
+   The square is the first thing on screen and it simply used to be there. Now
+   it inks in the way a chart is actually made: depth contours drawn across,
+   soundings written in after them, the compass rose settling to north last.
+   About a second and a quarter, once, and never again — this is the opening of
+   the game, not an idle animation.
+
+   The contours are wiped in with a clip rather than a stroke-dashoffset,
+   because their dashes are the look: animating the dash offset would draw them
+   as a solid line and then snap. Everything fills `both`, so under
+   `prefers-reduced-motion` — where the global rule cuts every duration to
+   nothing — the chart simply starts finished. */
+:host(.is-chart) .contours {
+  animation: ink-across 1.05s ease-out both;
+}
+
+:host(.is-chart) .soundings span {
+  animation: sound-in 0.45s ease-out both;
+  animation-delay: calc(0.35s + var(--i, 0) * 55ms);
+}
+
+:host(.is-chart) .rose {
+  animation: rose-north 1.1s cubic-bezier(0.16, 0.9, 0.3, 1) both;
+  animation-delay: 0.5s;
+}
+
+@keyframes ink-across {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+@keyframes sound-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes rose-north {
+  from {
+    opacity: 0;
+    transform: rotate(-32deg) scale(0.9);
+  }
+}
+
 .soundings span {
   position: absolute;
   transform: translate(-50%, -50%);

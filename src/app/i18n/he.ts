@@ -81,6 +81,7 @@ export const HE: Dictionary = {
   'result.lostEyebrow': 'הריבוע אבד',
   'result.won': 'ניצחון',
   'result.lost': 'תבוסה',
+  'result.benchmark': 'לאדמירל היו מספיקים {n}',
   'result.against': 'היריב — {text}',
   'action.rematch': 'קרב נוסף',
   'action.redeploy': 'פריסה מחדש',

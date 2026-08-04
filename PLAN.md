@@ -71,6 +71,8 @@ once the DOM tests are in. The red gate is recorded in the journal, not hidden.
 - [x] Turn a ship that is already on the chart, with the gesture that already turns things
 - [x] A harder opponent — found on the mooring side, not the shooting side
 - [x] Show the Admiral's reckoning after the battle, washed onto your own chart
+- [x] A mirror on the result card: what the Admiral would have needed
+- [x] The chart inks itself in on the first frame
 - [x] Phase 6 gate: the whole suite + the production build + `npm run test:sim`,
       coverage held to 95% on `src/app/i18n/**` as well
 
@@ -368,3 +370,27 @@ put off.
   so the charts ran past the fold; `--deck-chrome` rises while it is open and
   both charts shrink together, since a mismatched pair reads as a mistake.
   Build exit 0, `npm test -- --run` — 411/411, coverage 95.1% of statements.
+- Phase 6, two small ones. A number on the result card and a second and a
+  quarter of theatre at the start.
+  The mirror: sixty-one salvos means nothing on its own, and the game already
+  holds a very strong shooter, so it is simply set on the same deployment and
+  counted. Same ships, same squares, no luck of the draw between the two figures.
+  It replays from a board rebuilt out of the ships' positions and runs off a seed
+  of its own, because doing it on the game's own randomness would draw thousands
+  of numbers from it and the next battle would deal a different board for having
+  been asked a question. Shown only after a win — after a defeat the square was
+  never cleared and there is nothing to hold the number against.
+  Two of its tests were worthless before they were mutated. Comparing the levels
+  on the canonical board over twelve seeds had the Cabin Boy *ahead*, so it now
+  runs over twenty-five varied deployments. And "asking twice gives the same
+  answer" cannot fail at all: `computed` memoises, so the second read never runs.
+  Killing the seed isolation left the suite green. The replacement compares a
+  game that was asked against one that was not, and goes red for the right reason.
+  The chart drawing itself: contours wiped across, soundings written in after
+  them, the compass rose settling to north last. The wipe is a clip and not a
+  stroke-dashoffset, because those contours are dashed and animating the offset
+  would draw them solid and then snap. Everything fills `both`, so under
+  `prefers-reduced-motion`, where the global rule cuts every duration to nothing,
+  the chart simply starts finished.
+  Build exit 0, `npm test -- --run` — 419/419, coverage 95.1% of statements,
+  `npm run test:sim` green with the mooring still worth +3.38 ± 0.83 at 8.1σ.

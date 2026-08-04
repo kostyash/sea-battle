@@ -32,8 +32,8 @@
         <path d="M -4 86 C 20 80, 40 94, 62 86 S 88 78, 104 88" />
       </svg>
       <div class="soundings" aria-hidden="true">
-        @for (s of soundings; track $index) {
-          <span [style.left.%]="s[0]" [style.top.%]="s[1]">{{ s[2] }}</span>
+        @for (s of soundings; track $index; let i = $index) {
+          <span [style.left.%]="s[0]" [style.top.%]="s[1]" [style.--i]="i">{{ s[2] }}</span>
         }
       </div>
       <svg class="rose" viewBox="0 0 100 100" aria-hidden="true">

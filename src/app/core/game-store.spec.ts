@@ -626,3 +626,96 @@ describe("the Admiral's reckoning", () => {
     expect(store.replayFrame()).toBeNull();
   });
 });
+
+/**
+ * Sixty-one salvos means nothing on its own. The game holds a very strong
+ * shooter, so it can simply be set on the same deployment and counted — same
+ * ships, same squares, no luck of the draw between the two numbers.
+ */
+describe('the mirror the result card holds up', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    localStorage.clear();
+    TestBed.resetTestingModule();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  /** Sink the opponent outright. The clock has to move between salvos — the
+   *  store stays busy after a hit and would swallow a whole loop of them. */
+  const won = (seed = 4242): GameStore => {
+    const store = make(seed);
+    store.autoPlace();
+    store.beginBattle();
+    for (const cell of shipCellsOf(store.enemy())) {
+      store.fireAt(cell);
+      vi.advanceTimersByTime(PAUSE.afterHit + PAUSE.beforeFinish);
+    }
+    settle();
+    return store;
+  };
+
+  /** Lose outright, by missing on purpose until the opponent has taken it all. */
+  const lost = (seed = 3): GameStore => {
+    const store = make(seed);
+    store.autoPlace();
+    store.beginBattle();
+    const water = store
+      .enemy()
+      .shipAt.map((id, cell) => (id === -1 ? cell : -1))
+      .filter((cell) => cell !== -1);
+
+    for (const cell of water) {
+      if (store.phase() !== 'battle') break;
+      store.fireAt(cell);
+      settle();
+    }
+    return store;
+  };
+
+  it('says nothing until the square has actually been cleared', () => {
+    const store = make();
+    expect(store.admiralSalvos()).toBe(0);
+
+    store.autoPlace();
+    store.beginBattle();
+    expect(store.admiralSalvos()).toBe(0);
+  });
+
+  it('after a win it is a real count against the very fleet just sunk', () => {
+    const store = won();
+
+    expect(store.winner()).toBe('player');
+    expect(store.admiralSalvos()).toBeGreaterThanOrEqual(TOTAL_DECKS);
+    expect(store.admiralSalvos()).toBeLessThan(100);
+  });
+
+  /**
+   * Asking must not disturb the game it is asked about. Running the replay off
+   * the game's own randomness would draw thousands of numbers from it, and the
+   * next battle would deal a different board for having been asked a question.
+   * Reading it twice proves nothing — `computed` memoises, so the second read
+   * never runs — so this compares a game that was asked against one that was not.
+   */
+  it('asking the question leaves the next battle exactly as it would have been', () => {
+    const asked = won();
+    asked.admiralSalvos();
+    asked.rematch();
+    const afterAsking = [...asked.enemy().shipAt];
+
+    TestBed.resetTestingModule();
+    const never = won();
+    never.rematch();
+
+    expect(afterAsking).toEqual([...never.enemy().shipAt]);
+  });
+
+  it('after a defeat there is nothing to hold a number against', () => {
+    const store = lost();
+
+    expect(store.winner()).toBe('enemy');
+    expect(store.admiralSalvos()).toBe(0);
+  });
+});

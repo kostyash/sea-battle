@@ -60,6 +60,12 @@ Only the Admiral keeps one: he is the only level that computes a map at all. It
 is shown only after the battle — during play it would point at your own fleet and
 give away what he is about to do.
 
+## Was that any good?
+
+Win, and the result card says what the Admiral would have needed against the very
+fleet you just cleared — same ships, same squares. Sixty-one salvos means nothing
+on its own; sixty-one against his fifty-four means something.
+
 ## Languages
 
 English, Russian and Hebrew, switched at runtime from the button in the masthead;

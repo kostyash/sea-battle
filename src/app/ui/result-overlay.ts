@@ -29,6 +29,12 @@ import { I18n } from '../i18n/i18n';
           <div><dt>{{ i18n.t('stats.lost') }}</dt><dd>{{ store.playerLosses() }}<i>/10</i></dd></div>
         </dl>
 
+        @if (store.admiralSalvos()) {
+          <p class="mirror">
+            {{ i18n.t('result.benchmark', { n: store.admiralSalvos() }) }}
+          </p>
+        }
+
         <p class="against">{{ i18n.t('result.against', { text: levelName() }) }}</p>
 
         <div class="actions">
@@ -145,6 +151,11 @@ import { I18n } from '../i18n/i18n';
       font-style: normal;
       font-size: 0.6em;
       opacity: 0.4;
+    }
+    .mirror {
+      margin: -0.6rem 0 0.9rem;
+      font-size: 14px;
+      color: rgba(214, 228, 234, 0.72);
     }
     .against {
       margin: 0 0 1.2rem;

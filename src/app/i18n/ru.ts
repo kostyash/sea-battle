@@ -87,6 +87,7 @@ export const RU: Dictionary = {
   'result.lostEyebrow': 'Квадрат потерян',
   'result.won': 'Победа',
   'result.lost': 'Поражение',
+  'result.benchmark': 'Адмиралу хватило бы {n}',
   'result.against': 'Противник — {text}',
   'action.rematch': 'Ещё бой',
   'action.redeploy': 'Расставить заново',

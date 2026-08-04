@@ -1,4 +1,5 @@
 import { InjectionToken, Injectable, computed, inject, signal } from '@angular/core';
+import { salvosToClear } from '../ai/benchmark';
 import { hiddenBoard } from '../ai/berthing';
 import { densityMap } from '../ai/density';
 import { chooseShot } from '../ai/opponent';
@@ -97,8 +98,10 @@ export class GameStore {
   readonly audio = inject(AudioService);
   private readonly i18n = inject(I18n);
 
+  private readonly seed = inject(GAME_SEED);
+
   /** The one source of randomness in a game — see `GAME_SEED`. */
-  private rng = seededRng(inject(GAME_SEED));
+  private rng = seededRng(this.seed);
 
   /* ── the state of a game ────────────────────────────────────────────── */
 
@@ -177,6 +180,20 @@ export class GameStore {
   readonly playerDecksLeft = computed(() =>
     this.player().ships.reduce((n, s) => n + (s.size - s.hits), 0),
   );
+
+  /**
+   * What the Admiral would have needed against the very fleet you just cleared.
+   *
+   * Sixty-one salvos means nothing on its own; sixty-one against his fifty-four
+   * means something. Worked out only once the battle is won — after a defeat the
+   * square was never cleared and there is nothing to hold the number against —
+   * and off a seed of its own, so asking the question cannot disturb the game's
+   * own randomness.
+   */
+  readonly admiralSalvos = computed(() => {
+    if (this.phase() !== 'over' || this.winner() !== 'player') return 0;
+    return salvosToClear(this.enemy().ships, seededRng(this.seed ^ 0x9e3779b9));
+  });
 
   readonly canFire = computed(
     () => this.phase() === 'battle' && this.turn() === 'player' && !this.busy(),
