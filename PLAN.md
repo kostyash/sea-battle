@@ -67,6 +67,7 @@ once the DOM tests are in. The red gate is recorded in the journal, not hidden.
       and remembered between visits
 - [x] Right to left for Hebrew, with the chart itself deliberately left to right
 - [x] The whole game on one screen at 1920 × 1080, without a page scrollbar
+- [x] Self-hosted fonts: no request leaves this origin any more
 - [x] Phase 6 gate: the whole suite + the production build + `npm run test:sim`,
       coverage held to 95% on `src/app/i18n/**` as well
 
@@ -75,15 +76,6 @@ once the DOM tests are in. The red gate is recorded in the journal, not hidden.
 All the phases are closed, the gates are green. Below is what was deliberately
 put off.
 
-- [ ] Self-hosted fonts instead of Google Fonts. Right now `index.html` pulls
-      Forum, PT Sans Narrow and IBM Plex Mono from a third-party domain, and
-      since phase 6 also Frank Ruhl Libre and Heebo for the Hebrew the other
-      three do not carry: this is the game's only external dependency and the
-      reason for the orange FCP of 1.0 s in Lighthouse (its remaining complaints
-      are browser extensions and the fixed `max-age=600` of Pages itself, nothing
-      to fix there). Hosting them ourselves will add ~150–250 KB of woff2 — more
-      now that Hebrew is in — but it will remove the outside request and the
-      flicker of the fallback font.
 - [ ] Cosmetics from the review (nothing changes in behaviour, hence deferred):
       unused tokens in `styles.css`; `enemyStats` in the store, which nobody
       reads; the `[class.ghosted]` binding with no rule in the CSS, together with
@@ -270,3 +262,21 @@ put off.
   intrinsic width and collapsed to zero. It needs a definite `width`. Measured at
   1536 × 706 — no scrollbar in either axis, in English and in Hebrew, deploying and
   in battle.
+- Phase 6, the fonts came home. They were the last thing the game asked of anybody
+  else: five families from fonts.googleapis.com, which put a DNS lookup and a TLS
+  handshake to two other hosts in front of the first paint, and a record of every
+  visit on a server that is not ours. The same woff2 files now sit in
+  `public/fonts` and are declared in `src/fonts.css`.
+  Seventeen files and 302 kB sounds worse than it is: each face is declared once
+  per subset with the `unicode-range` it covers, so a browser fetches only the
+  alphabet the page is in — about 153 kB of Latin for an English visitor, 54 kB of
+  Hebrew plus the digits for a Hebrew one. Nobody pays for all three. Only the two
+  faces the first paint cannot do without are preloaded, and only their Latin cut.
+  A guard holds the line, because pasting a `<link>` from a font site is a thing
+  one does without noticing: no stylesheet and no `<link>` may name a font host,
+  every declared file must exist, every shipped file must be declared, every face
+  must carry a `unicode-range` and `font-display: swap`. Verified by putting a
+  Google Fonts link back and watching it go red. The OFL text ships beside the
+  files, as that licence requires.
+  Build exit 0 (60.7 kB gzip of JS and CSS, plus the fonts as separate cached
+  files), `npm test -- --run` — 381/381.

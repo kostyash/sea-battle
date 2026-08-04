@@ -8,12 +8,19 @@
     <meta name="theme-color" content="#071119" />
     <meta name="description" content="Sea battle against the computer: deploy your fleet and sink the opponent's squadron. English, Russian and Hebrew." />
     <link rel="icon" type="image/x-icon" href="favicon.ico" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <!-- Frank Ruhl Libre and Heebo carry the Hebrew the other three faces lack. -->
+    <!--
+      The typefaces are served from this origin — see `src/fonts.css`. Only the two
+      the first paint cannot do without are preloaded, and only their Latin cut: the
+      title's face and the one the body is set in. Cyrillic and Hebrew are fetched
+      by the same rules as any other subset, when a page actually uses them.
+    -->
+    <link rel="preload" href="/fonts/forum-400-latin.woff2" as="font" type="font/woff2" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Forum&family=PT+Sans+Narrow:wght@400;700&family=IBM+Plex+Mono:wght@400;500;600&family=Frank+Ruhl+Libre:wght@400;700&family=Heebo:wght@400;500;600&display=swap"
-      rel="stylesheet"
+      rel="preload"
+      href="/fonts/pt-sans-narrow-400-latin.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
     />
   </head>
   <body>

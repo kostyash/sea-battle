@@ -88,5 +88,7 @@ completely — you can see where the ships you never found were hiding.
 
 Fonts: Forum (headings), PT Sans Narrow (labels), IBM Plex Mono (coordinates and
 the log). None of the three carries Hebrew, so Frank Ruhl Libre and Heebo sit
-behind them and the browser falls back per glyph. Animations switch off under
-`prefers-reduced-motion`.
+behind them and the browser falls back per glyph. All five are served from this
+origin out of `public/fonts` — the game makes no third-party request at all — and
+each is declared per subset, so a browser downloads only the alphabet the page is
+actually in. Animations switch off under `prefers-reduced-motion`.
