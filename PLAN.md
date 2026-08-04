@@ -70,6 +70,7 @@ once the DOM tests are in. The red gate is recorded in the journal, not hidden.
 - [x] Self-hosted fonts: no request leaves this origin any more
 - [x] Turn a ship that is already on the chart, with the gesture that already turns things
 - [x] A harder opponent — found on the mooring side, not the shooting side
+- [x] Show the Admiral's reckoning after the battle, washed onto your own chart
 - [x] Phase 6 gate: the whole suite + the production build + `npm run test:sim`,
       coverage held to 95% on `src/app/i18n/**` as well
 
@@ -339,3 +340,31 @@ put off.
   handed a worse deployment than the computer keeps for itself.
   Build exit 0, `npm test -- --run` — 397/397, coverage 95.4% of statements,
   `npm run test:sim` — Admiral 54.91 < Midshipman 57.13 < Cabin Boy 63.19.
+- Phase 6, what the Admiral saw. The opponent already works out, before each of
+  his salvos, how likely a ship is on every square — and then throws it away. It
+  is now kept, a hundred numbers a turn, and washed onto the paper afterwards
+  with a scrubber to walk the battle back through.
+  Prototyped first, and the prototype earned its keep twice. It caught a `return`
+  where a `continue` belonged inside a `forEach` — every ship after the first
+  found no berth and the whole thing fell over, which is what happens when a
+  prototype is published without being run. It also caught the design mistake:
+  scaled from zero the wash floods the chart one flat colour, because early on
+  every square really is worth about the same. Stretched between the coldest and
+  the warmest square still in play, the corners sit on bare paper and the ramp
+  carries meaning. Six bands rather than a smooth gradient, the way a chart
+  shades depth — a maximum can be picked out of bands and blurs in a gradient.
+  Two things it will not do. It is shown only after the battle, over a chart the
+  player already knows: during play it would be pointing at their own ships and
+  telling them what the opponent is about to do. And it is kept only for the
+  Admiral, because he is the only level that computes one — a map over the Cabin
+  Boy's random shots would be an invention.
+  The moment worth building it for is the collapse: hunting, ninety-six squares
+  carry some ink; the salvo after a hit lands, one does. The twenty-four-fold
+  weight on a berth covering an open hit, made visible.
+  Two things it broke, both caught in the browser rather than by tests. The rack
+  gained a second scrollbar beside the firing log's — one scroll region per phase
+  now, the log taking the slack in battle and the rack itself scrolling during
+  deployment. And the replay bar is height the one-screen fit knew nothing about,
+  so the charts ran past the fold; `--deck-chrome` rises while it is open and
+  both charts shrink together, since a mismatched pair reads as a mistake.
+  Build exit 0, `npm test -- --run` — 411/411, coverage 95.1% of statements.

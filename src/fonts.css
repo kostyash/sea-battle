@@ -4,7 +4,14 @@
  * They used to come from fonts.googleapis.com — the only third-party request the
  * game made, and the reason its first paint waited on a DNS lookup and a TLS
  * handshake to two other hosts. These are the same faces, the same woff2 files
- * Google would have served, kept in `public/fonts`.
+ * Google would have served, kept in `src/fonts`.
+ *
+ * The paths are relative on purpose. On Pages the game is served from a
+ * subdirectory, and an absolute `/fonts/...` resolves to the domain root, which
+ * is somebody else's page — that is exactly how it broke. Handing the files to
+ * the build instead means it emits them itself and rewrites these URLs relative
+ * to the stylesheet, which is right whatever the site is mounted under. They are
+ * content-hashed as a consequence, so they can also be cached forever.
  *
  * Every face is declared once per subset with the `unicode-range` it covers, so a
  * browser downloads only the alphabets the page actually uses: Latin for English,
@@ -23,7 +30,7 @@
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url('/fonts/forum-400-cyrillic.woff2') format('woff2');
+  src: url('./fonts/forum-400-cyrillic.woff2') format('woff2');
   unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
 }
 @font-face {
@@ -31,7 +38,7 @@
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url('/fonts/forum-400-latin.woff2') format('woff2');
+  src: url('./fonts/forum-400-latin.woff2') format('woff2');
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
@@ -41,7 +48,7 @@
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url('/fonts/pt-sans-narrow-400-cyrillic.woff2') format('woff2');
+  src: url('./fonts/pt-sans-narrow-400-cyrillic.woff2') format('woff2');
   unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
 }
 @font-face {
@@ -49,7 +56,7 @@
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url('/fonts/pt-sans-narrow-400-latin.woff2') format('woff2');
+  src: url('./fonts/pt-sans-narrow-400-latin.woff2') format('woff2');
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 @font-face {
@@ -57,7 +64,7 @@
   font-style: normal;
   font-weight: 700;
   font-display: swap;
-  src: url('/fonts/pt-sans-narrow-700-cyrillic.woff2') format('woff2');
+  src: url('./fonts/pt-sans-narrow-700-cyrillic.woff2') format('woff2');
   unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
 }
 @font-face {
@@ -65,7 +72,7 @@
   font-style: normal;
   font-weight: 700;
   font-display: swap;
-  src: url('/fonts/pt-sans-narrow-700-latin.woff2') format('woff2');
+  src: url('./fonts/pt-sans-narrow-700-latin.woff2') format('woff2');
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
@@ -75,7 +82,7 @@
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url('/fonts/ibm-plex-mono-400-cyrillic.woff2') format('woff2');
+  src: url('./fonts/ibm-plex-mono-400-cyrillic.woff2') format('woff2');
   unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
 }
 @font-face {
@@ -83,7 +90,7 @@
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url('/fonts/ibm-plex-mono-400-latin.woff2') format('woff2');
+  src: url('./fonts/ibm-plex-mono-400-latin.woff2') format('woff2');
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 @font-face {
@@ -91,7 +98,7 @@
   font-style: normal;
   font-weight: 500;
   font-display: swap;
-  src: url('/fonts/ibm-plex-mono-500-cyrillic.woff2') format('woff2');
+  src: url('./fonts/ibm-plex-mono-500-cyrillic.woff2') format('woff2');
   unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
 }
 @font-face {
@@ -99,7 +106,7 @@
   font-style: normal;
   font-weight: 500;
   font-display: swap;
-  src: url('/fonts/ibm-plex-mono-500-latin.woff2') format('woff2');
+  src: url('./fonts/ibm-plex-mono-500-latin.woff2') format('woff2');
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 @font-face {
@@ -107,7 +114,7 @@
   font-style: normal;
   font-weight: 600;
   font-display: swap;
-  src: url('/fonts/ibm-plex-mono-600-cyrillic.woff2') format('woff2');
+  src: url('./fonts/ibm-plex-mono-600-cyrillic.woff2') format('woff2');
   unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
 }
 @font-face {
@@ -115,7 +122,7 @@
   font-style: normal;
   font-weight: 600;
   font-display: swap;
-  src: url('/fonts/ibm-plex-mono-600-latin.woff2') format('woff2');
+  src: url('./fonts/ibm-plex-mono-600-latin.woff2') format('woff2');
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
@@ -125,7 +132,7 @@
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url('/fonts/frank-ruhl-libre-400-hebrew.woff2') format('woff2');
+  src: url('./fonts/frank-ruhl-libre-400-hebrew.woff2') format('woff2');
   unicode-range: U+0307-0308, U+0590-05FF, U+200C-2010, U+20AA, U+25CC, U+FB1D-FB4F;
 }
 
@@ -135,7 +142,7 @@
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url('/fonts/heebo-400-hebrew.woff2') format('woff2');
+  src: url('./fonts/heebo-400-hebrew.woff2') format('woff2');
   unicode-range: U+0307-0308, U+0590-05FF, U+200C-2010, U+20AA, U+25CC, U+FB1D-FB4F;
 }
 @font-face {
@@ -143,7 +150,7 @@
   font-style: normal;
   font-weight: 500;
   font-display: swap;
-  src: url('/fonts/heebo-500-hebrew.woff2') format('woff2');
+  src: url('./fonts/heebo-500-hebrew.woff2') format('woff2');
   unicode-range: U+0307-0308, U+0590-05FF, U+200C-2010, U+20AA, U+25CC, U+FB1D-FB4F;
 }
 @font-face {
@@ -151,7 +158,7 @@
   font-style: normal;
   font-weight: 600;
   font-display: swap;
-  src: url('/fonts/heebo-600-hebrew.woff2') format('woff2');
+  src: url('./fonts/heebo-600-hebrew.woff2') format('woff2');
   unicode-range: U+0307-0308, U+0590-05FF, U+200C-2010, U+20AA, U+25CC, U+FB1D-FB4F;
 }
 @font-face {
@@ -159,6 +166,6 @@
   font-style: normal;
   font-weight: 700;
   font-display: swap;
-  src: url('/fonts/heebo-700-hebrew.woff2') format('woff2');
+  src: url('./fonts/heebo-700-hebrew.woff2') format('woff2');
   unicode-range: U+0307-0308, U+0590-05FF, U+200C-2010, U+20AA, U+25CC, U+FB1D-FB4F;
 }

@@ -1,9 +1,10 @@
 import { InjectionToken, Injectable, computed, inject, signal } from '@angular/core';
 import { hiddenBoard } from '../ai/berthing';
+import { densityMap } from '../ai/density';
 import { chooseShot } from '../ai/opponent';
 import { Difficulty } from '../ai/levels';
 import { AudioService } from './audio';
-import { Board, ShotResult, emptyBoard } from '../domain/board';
+import { Board, CellState, ShotResult, emptyBoard } from '../domain/board';
 import { FLEET_SHIPS, FLEET_SPEC, isSunk } from '../domain/fleet';
 import { Orientation, SIZE, Side } from '../domain/grid';
 import {
@@ -64,6 +65,21 @@ export interface LogEntry {
   shipSize: number | null;
 }
 
+/**
+ * One salvo of the opponent's, kept whole: the marks as they stood, what it
+ * reckoned of every square, and where it fired.
+ *
+ * The Admiral already works this out before each salvo and then throws it away.
+ * Keeping it costs a hundred numbers a turn and buys the one thing the player
+ * never gets to see — the reasoning that hunted them down.
+ */
+export interface Reckoning {
+  shots: readonly CellState[];
+  score: readonly number[];
+  cell: number;
+  result: ShotResult;
+}
+
 export interface Splash {
   id: number;
   side: Side;
@@ -98,6 +114,19 @@ export class GameStore {
   readonly verdictOpen = signal(false);
   readonly log = signal<LogEntry[]>([]);
   readonly splash = signal<Splash | null>(null);
+
+  /** The opponent's reckoning, salvo by salvo. Only the Admiral keeps one. */
+  readonly reckoning = signal<Reckoning[]>([]);
+  /** Which salvo of that reckoning is being looked at. */
+  readonly replayAt = signal(0);
+  readonly replayOpen = signal(false);
+
+  /** The reckoning now on show, if the replay is open. */
+  readonly replayFrame = computed(() => {
+    if (!this.replayOpen()) return null;
+    const frames = this.reckoning();
+    return frames[Math.min(this.replayAt(), frames.length - 1)] ?? null;
+  });
 
   /** The status line, still as a key and its data — see `messageText`. */
   readonly message = signal<Msg<MsgKey>>({ key: 'msg.deploy' });
@@ -338,8 +367,20 @@ export class GameStore {
       return;
     }
 
+    // taken before the shot lands: this is what it knew when it chose
+    const reckoned =
+      this.difficulty() === 'admiral'
+        ? densityMap(board.shots, afloatSizes(board)).score
+        : null;
+
     const outcome = fire(board, cell);
     this.player.set(outcome.board);
+    if (reckoned) {
+      this.reckoning.update((log) => [
+        ...log,
+        { shots: board.shots, score: reckoned, cell, result: outcome.result },
+      ]);
+    }
     this.enemyTally.update((t) => ({
       shots: t.shots + 1,
       hits: t.hits + (outcome.result === 'miss' ? 0 : 1),
@@ -383,6 +424,24 @@ export class GameStore {
     });
   }
 
+  /** Show the Admiral's reckoning over your own chart, from its first salvo. */
+  openReplay(): void {
+    if (!this.reckoning().length) return;
+    this.verdictDismissed = true;
+    this.verdictOpen.set(false);
+    this.replayAt.set(0);
+    this.replayOpen.set(true);
+  }
+
+  closeReplay(): void {
+    this.replayOpen.set(false);
+  }
+
+  showSalvo(n: number): void {
+    const last = this.reckoning().length - 1;
+    this.replayAt.set(Math.max(0, Math.min(n, last)));
+  }
+
   closeVerdict(): void {
     this.verdictDismissed = true;
     this.verdictOpen.set(false);
@@ -400,6 +459,9 @@ export class GameStore {
     this.verdictDismissed = false;
     this.log.set([]);
     this.splash.set(null);
+    this.reckoning.set([]);
+    this.replayOpen.set(false);
+    this.replayAt.set(0);
     this.playerTally.set({ shots: 0, hits: 0 });
     this.enemyTally.set({ shots: 0, hits: 0 });
     this.pickedSize.set(4);

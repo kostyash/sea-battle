@@ -46,6 +46,14 @@
       <div class="sweep" aria-hidden="true"></div>
     }
 
+    @if (wash(); as bands) {
+      <div class="reckoning" aria-hidden="true">
+        @for (cell of gridCells; track cell) {
+          <span [style.opacity]="bands[cell] * 0.5"></span>
+        }
+      </div>
+    }
+
     @for (row of gridRows; track $index) {
       <div class="row" role="row">
         @for (i of row; track i) {

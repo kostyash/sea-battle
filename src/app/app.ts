@@ -45,6 +45,10 @@ export class App {
     return this.i18n.t(this.store.turn() === 'player' ? 'turn.yours' : 'turn.theirs');
   });
 
+  protected onScrub(event: Event): void {
+    this.store.showSalvo(Number((event.target as HTMLInputElement).value));
+  }
+
   protected onKey(event: KeyboardEvent): void {
     if (!this.deploying()) return;
     if (!ROTATE_KEYS.has(event.key.toLowerCase())) return;

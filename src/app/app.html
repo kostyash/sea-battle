@@ -3,7 +3,12 @@
      is only a claim: Tab still walked out of the card and into the masthead, and the
      language switch put three more controls there to land on. `inert` makes the
      claim true for the keyboard as well. -->
-<div class="deck" [class.phase-deploy]="deploying()" [attr.inert]="store.verdictOpen() ? '' : null">
+<div
+  class="deck"
+  [class.phase-deploy]="deploying()"
+  [class.replaying]="store.replayOpen()"
+  [attr.inert]="store.verdictOpen() ? '' : null"
+>
   <header class="masthead">
     <div class="brand">
       <p class="eyebrow">{{ i18n.t('app.eyebrow') }}</p>
@@ -46,6 +51,33 @@
         <h2>{{ i18n.t('sea.home') }}</h2>
         <span class="sea__note">{{ i18n.t('sea.home.note') }}</span>
       </div>
+
+      @if (store.replayFrame(); as frame) {
+        <div class="reckon">
+          <p class="reckon__head">
+            <span class="eyebrow">{{ i18n.t('replay.title') }}</span>
+            <span class="reckon__at">
+              {{ i18n.t('replay.salvo') }} <b>{{ store.replayAt() + 1 }}</b
+              ><i>/{{ store.reckoning().length }}</i>
+            </span>
+          </p>
+          <input
+            type="range"
+            class="reckon__scrub"
+            min="0"
+            [max]="store.reckoning().length - 1"
+            [value]="store.replayAt()"
+            [attr.aria-label]="i18n.t('replay.salvo')"
+            (input)="onScrub($event)"
+          />
+          <p class="reckon__foot">
+            <span class="hint">{{ i18n.t('replay.hint') }}</span>
+            <button type="button" class="btn btn--ghost" (click)="store.closeReplay()">
+              {{ i18n.t('replay.close') }}
+            </button>
+          </p>
+        </div>
+      }
       <app-board-grid
         variant="chart"
         [caption]="i18n.t('board.home')"
@@ -53,6 +85,8 @@
         [interactive]="deploying()"
         [ghost]="store.ghost()"
         [splash]="homeSplash()"
+        [heat]="store.replayFrame()?.score ?? null"
+        [asOf]="store.replayFrame()?.shots ?? null"
         (cellEnter)="store.setHover($event)"
         (cellLeave)="store.setHover(null)"
         (cellPick)="store.placeAt($event)"

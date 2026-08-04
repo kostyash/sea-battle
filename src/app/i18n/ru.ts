@@ -90,6 +90,11 @@ export const RU: Dictionary = {
   'result.against': 'Противник — {text}',
   'action.rematch': 'Ещё бой',
   'action.redeploy': 'Расставить заново',
+  'replay.open': 'Что видел адмирал',
+  'replay.title': 'Его расчёт',
+  'replay.salvo': 'Залп',
+  'replay.hint': 'Чем темнее вода, тем вероятнее он считал, что там корабль.',
+  'replay.close': 'Готово',
   'action.survey': 'Осмотреть квадрат противника',
 
   'msg.deploy': 'Расставьте флот в своих водах',

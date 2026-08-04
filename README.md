@@ -47,6 +47,19 @@ dealt and the one lying in the coldest water puts to sea, which is worth about
 3.6 extra salvos against that hunter: more than the gap between two difficulty
 levels. Your own draw-lots button uses the same mooring.
 
+## What the Admiral saw
+
+Beat the Admiral, or lose to him, and the result card offers to replay his
+reckoning. Before every salvo he works out how likely a ship is on each square;
+that is normally thrown away, and is instead kept and washed onto your own chart,
+a salvo at a time. Watch the ink pool on a ship three salvos before it dies, and
+watch the whole chart empty the moment one of yours is wounded — a berth covering
+an open hit counts twenty-four times over, so he finishes what he starts.
+
+Only the Admiral keeps one: he is the only level that computes a map at all. It
+is shown only after the battle — during play it would point at your own fleet and
+give away what he is about to do.
+
 ## Languages
 
 English, Russian and Hebrew, switched at runtime from the button in the masthead;

@@ -9,19 +9,11 @@
     <meta name="description" content="Sea battle against the computer: deploy your fleet and sink the opponent's squadron. English, Russian and Hebrew." />
     <link rel="icon" type="image/x-icon" href="favicon.ico" />
     <!--
-      The typefaces are served from this origin — see `src/fonts.css`. Only the two
-      the first paint cannot do without are preloaded, and only their Latin cut: the
-      title's face and the one the body is set in. Cyrillic and Hebrew are fetched
-      by the same rules as any other subset, when a page actually uses them.
+      The typefaces are served from this origin — see `src/fonts.css`. They are
+      not preloaded: the build content-hashes them, so their final names are not
+      known here, and a preload of the wrong name is worse than none — the file
+      is fetched twice and the browser warns that nothing used the first copy.
     -->
-    <link rel="preload" href="/fonts/forum-400-latin.woff2" as="font" type="font/woff2" crossorigin />
-    <link
-      rel="preload"
-      href="/fonts/pt-sans-narrow-400-latin.woff2"
-      as="font"
-      type="font/woff2"
-      crossorigin
-    />
   </head>
   <body>
     <app-root></app-root>

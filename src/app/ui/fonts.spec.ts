@@ -14,7 +14,8 @@ import { describe, expect, it } from 'vitest';
  */
 const ROOT = process.cwd();
 const SRC = join(ROOT, 'src');
-const FONT_DIR = join(ROOT, 'public', 'fonts');
+const FONT_DIR = join(SRC, 'fonts');
+const LICENCE = join(ROOT, 'public', 'fonts', 'LICENSE.txt');
 
 const stripComments = (text: string): string => text.replace(/\/\*[\s\S]*?\*\//g, ' ');
 
@@ -44,7 +45,7 @@ describe('the typefaces are served from this origin', () => {
   });
 
   it('every face it declares is a file that is actually there', () => {
-    const urls = [...fonts.matchAll(/url\('\/fonts\/([^']+)'\)/g)].map((m) => m[1]);
+    const urls = [...fonts.matchAll(/url\('\.\/fonts\/([^']+)'\)/g)].map((m) => m[1]);
     expect(urls.length).toBeGreaterThan(0);
     for (const file of urls) {
       expect(existsSync(join(FONT_DIR, file)), `${file} is declared but missing`).toBe(true);
@@ -52,11 +53,27 @@ describe('the typefaces are served from this origin', () => {
   });
 
   it('every file that is there is declared, so none is shipped for nothing', () => {
-    const declared = new Set([...fonts.matchAll(/url\('\/fonts\/([^']+)'\)/g)].map((m) => m[1]));
+    const declared = new Set([...fonts.matchAll(/url\('\.\/fonts\/([^']+)'\)/g)].map((m) => m[1]));
     const present = readdirSync(FONT_DIR).filter((f) => f.endsWith('.woff2'));
     for (const file of present) {
       expect(declared.has(file), `${file} is shipped but no rule uses it`).toBe(true);
     }
+  });
+
+  /**
+   * The bug this exists for: an absolute `/fonts/...` resolves to the domain
+   * root, and on Pages the game is served from a subdirectory — so every font
+   * 404'd in production while working perfectly on a dev server mounted at `/`.
+   * Relative paths are also what lets the build hash the files.
+   */
+  it('asks for its fonts relative to itself, so a subdirectory does not break them', () => {
+    for (const url of fonts.match(/url\([^)]*\)/g) ?? []) {
+      expect(url, 'an absolute path breaks the game under a subdirectory').not.toMatch(
+        /url\(['"]?\//,
+      );
+    }
+    const html = readFileSync(join(SRC, 'index.html'), 'utf-8').replace(/<!--[\s\S]*?-->/g, ' ');
+    expect(html, 'index.html must not point at the domain root either').not.toContain('"/fonts/');
   });
 
   /**
@@ -74,7 +91,7 @@ describe('the typefaces are served from this origin', () => {
   });
 
   it('the licence of the fonts is shipped beside them, as it requires', () => {
-    const licence = readFileSync(join(FONT_DIR, 'LICENSE.txt'), 'utf-8');
+    const licence = readFileSync(LICENCE, 'utf-8');
     expect(licence).toContain('SIL Open Font License');
     for (const family of ['Forum', 'PT Sans Narrow', 'IBM Plex Mono', 'Frank Ruhl Libre', 'Heebo']) {
       expect(licence, `${family} is unattributed`).toContain(family);

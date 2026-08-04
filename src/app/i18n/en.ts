@@ -96,6 +96,11 @@ export const EN = {
   'result.against': 'Opponent — {text}',
   'action.rematch': 'Another battle',
   'action.redeploy': 'Deploy again',
+  'replay.open': 'What the Admiral saw',
+  'replay.title': 'His reckoning',
+  'replay.salvo': 'Salvo',
+  'replay.hint': 'The darker the water, the likelier he thought a ship was in it.',
+  'replay.close': 'Done',
   'action.survey': "Survey the opponent's square",
 
   /* ── the status line ────────────────────────────────────────────────── */
