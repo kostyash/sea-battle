@@ -5,11 +5,11 @@ import { densityShot } from './density';
 import { Difficulty } from './levels';
 
 /**
- * Противник видит ровно то же, что игрок: сетку отметок и список ещё не
- * потопленных калибров. В чужую расстановку он не заглядывает — сюда её просто
- * не передают. Случайность приходит извне, поэтому партия воспроизводима.
+ * The opponent sees exactly what the player sees: the grid of marks and the list
+ * of ship sizes not yet sunk. It never peeks at the enemy deployment — that is
+ * simply not passed in here. Randomness comes from outside, so a game replays.
  *
- * Возвращает индекс клетки или -1, если стрелять уже некуда.
+ * Returns a cell index, or -1 if there is nothing left to shoot at.
  */
 export function chooseShot(
   shots: readonly CellState[],
@@ -21,19 +21,19 @@ export function chooseShot(
   if (!open.length) return -1;
 
   switch (level) {
-    case 'yunga':
+    case 'cabin-boy':
       return novice(shots, open, rng);
-    case 'michman':
+    case 'midshipman':
       return officer(shots, afloat, open, rng);
     default: {
-      // если ни одна расстановка не сошлась — падаем в мичманский поиск
+      // if no placement fit at all — fall back to the Midshipman search
       const dense = densityShot(shots, afloat, open, rng);
       return dense === -1 ? officer(shots, afloat, open, rng) : dense;
     }
   }
 }
 
-/* ── Юнга: бьёт наугад и добивает через раз ────────────────────────────── */
+/* ── Cabin Boy: fires blind, finishes off every other time ─────────────── */
 
 function novice(shots: readonly CellState[], open: number[], rng: Rng): number {
   const wounded = cellsWhere((i) => shots[i] === 'hit');
@@ -44,7 +44,7 @@ function novice(shots: readonly CellState[], open: number[], rng: Rng): number {
   return rng.pick(open);
 }
 
-/* ── Мичман: поиск через клетку, добивание по линии ─────────────────────── */
+/* ── Midshipman: every-other-cell search, finish off along the line ─────── */
 
 export function officer(
   shots: readonly CellState[],
@@ -61,15 +61,16 @@ export function officer(
     if (near.length) return rng.pick(near);
   }
 
-  // Через клетку имеет смысл искать, пока на плаву есть хоть один многопалубный:
-  // такую цель шахматная сетка не пропустит. Катера добираются в конце сплошняком.
+  // Searching every other cell pays off while at least one multi-deck ship is
+  // afloat: a checkerboard cannot miss such a target. The single-deck boats get
+  // mopped up cell by cell at the end.
   const biggest = afloat.length ? Math.max(...afloat) : 1;
   const step = biggest > 1 ? 2 : 1;
   const grid = open.filter((i) => (rowOf(i) + colOf(i)) % step === 0);
   return rng.pick(grid.length ? grid : open);
 }
 
-/** Продолжение уже нащупанной линии попаданий — оба её конца. */
+/** The continuation of an already traced line of hits — both of its ends. */
 function alignedTargets(shots: readonly CellState[], wounded: number[]): number[] {
   const set = new Set(wounded);
   const out: number[] = [];
@@ -77,7 +78,7 @@ function alignedTargets(shots: readonly CellState[], wounded: number[]): number[
   for (const c of wounded) {
     for (const [dr, dc] of DIRECTIONS) {
       const back = step(c, -dr, -dc);
-      if (back === -1 || !set.has(back)) continue; // нужен сосед сзади — значит есть линия
+      if (back === -1 || !set.has(back)) continue; // a neighbour behind proves a line
       let n = step(c, dr, dc);
       while (n !== -1 && set.has(n)) n = step(n, dr, dc);
       if (n !== -1 && shots[n] === 'unknown') out.push(n);
@@ -86,7 +87,7 @@ function alignedTargets(shots: readonly CellState[], wounded: number[]): number[
   return out;
 }
 
-/* ── общее ─────────────────────────────────────────────────────────────── */
+/* ── shared ────────────────────────────────────────────────────────────── */
 
 const DIRECTIONS = [
   [0, 1],

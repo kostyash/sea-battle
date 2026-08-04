@@ -21,57 +21,57 @@ const openCells = (shots: readonly CellState[]): number[] => {
   return out;
 };
 
-describe('карта плотности', () => {
-  it('на пустом поле середина ценнее угла — там больше расстановок', () => {
+describe('density map', () => {
+  it('on an empty board the middle is worth more than a corner — more ships fit there', () => {
     const { score } = densityMap(blank(), FULL_FLEET);
     expect(score[idx(4, 4)]).toBeGreaterThan(score[idx(0, 0)]);
     expect(score[idx(4, 4)]).toBeGreaterThan(score[idx(0, 5)]);
   });
 
-  it('на пустом поле карта симметрична', () => {
+  it('on an empty board the map is symmetric', () => {
     const { score } = densityMap(blank(), FULL_FLEET);
     expect(score[idx(0, 0)]).toBe(score[idx(9, 9)]);
     expect(score[idx(0, 3)]).toBe(score[idx(9, 6)]);
     expect(score[idx(2, 7)]).toBe(score[idx(7, 2)]);
   });
 
-  it('промах обнуляет свою клетку и роняет соседние', () => {
+  it('a miss zeroes its own cell and drags the neighbouring ones down', () => {
     const clean = densityMap(blank(), FULL_FLEET).score;
     const { score } = densityMap(withMarks({ [idx(4, 4)]: 'miss' }), FULL_FLEET);
     expect(score[idx(4, 4)]).toBe(0);
     expect(score[idx(4, 5)]).toBeLessThan(clean[idx(4, 5)]);
   });
 
-  it('потопленная клетка тоже перекрывает расстановки', () => {
+  it('a sunk cell blocks placements just the same', () => {
     const { score } = densityMap(withMarks({ [idx(4, 4)]: 'sunk' }), FULL_FLEET);
     expect(score[idx(4, 4)]).toBe(0);
   });
 
-  it('без ран режим добивания не включается', () => {
+  it('with no open hits the finishing-off mode stays off', () => {
     expect(densityMap(blank(), FULL_FLEET).mustFinish).toBe(false);
   });
 
-  it('одна рана переводит карту в режим добивания', () => {
+  it('a single open hit switches the map into finishing-off mode', () => {
     const { mustFinish, score } = densityMap(withMarks({ [idx(4, 4)]: 'hit' }), FULL_FLEET);
     expect(mustFinish).toBe(true);
-    // вес получают только клетки, продолжающие раненый корабль
+    // only the cells that continue the wounded ship get any weight
     expect(score[idx(4, 5)]).toBeGreaterThan(0);
     expect(score[idx(0, 0)]).toBe(0);
   });
 
-  it('раненая линия ценит свои концы выше, чем бока', () => {
+  it('a wounded line values its own ends higher than its flanks', () => {
     const shots = withMarks({ [idx(5, 4)]: 'hit', [idx(5, 5)]: 'hit' });
     const { score } = densityMap(shots, FULL_FLEET);
     expect(score[idx(5, 3)]).toBeGreaterThan(0);
     expect(score[idx(5, 6)]).toBeGreaterThan(0);
-    // вбок корабль уйти не может — он бы соприкоснулся сам с собой
+    // the ship cannot turn sideways — it would end up touching itself
     expect(score[idx(4, 4)]).toBe(0);
     expect(score[idx(6, 5)]).toBe(0);
   });
 
-  it('в щель, куда калибр не влезает, он веса не приносит', () => {
-    // Щель шириной 3 по горизонтали: столбцы 5..7, отгороженные промахами.
-    // По вертикали её тоже надо закрыть, иначе четырёхпалубный встанет поперёк.
+  it('a ship size that does not fit into a gap brings no weight to it', () => {
+    // A gap three wide horizontally: columns 5..7, fenced off by misses.
+    // It has to be closed vertically too, or the four-decker would stand across it.
     const walls: Record<number, CellState> = {};
     for (let r = 0; r < 10; r++) {
       walls[idx(r, 4)] = 'miss';
@@ -81,54 +81,54 @@ describe('карта плотности', () => {
       walls[idx(1, c)] = 'miss';
     }
     const shots = withMarks(walls);
-    const gap = idx(0, 6); // середина щели 3x1 в верхнем ряду
+    const gap = idx(0, 6); // middle of the 3x1 gap in the top row
 
-    // трёхпалубный сюда встаёт, четырёхпалубному места нет ни вдоль, ни поперёк
+    // a three-decker fits in here; a four-decker has no room either along or across
     expect(densityMap(shots, [3]).score[gap]).toBeGreaterThan(0);
     expect(densityMap(shots, [4]).score[gap]).toBe(0);
   });
 
-  it('чем больше однотипных калибров на плаву, тем выше вес клетки', () => {
+  it('the more ships of one size are still afloat, the heavier a cell weighs', () => {
     const one = densityMap(blank(), [3]).score[idx(4, 4)];
     const two = densityMap(blank(), [3, 3]).score[idx(4, 4)];
     expect(two).toBe(one * 2);
   });
 
-  it('пустой список калибров даёт нулевую карту', () => {
+  it('an empty list of ship sizes gives an all-zero map', () => {
     expect(densityMap(blank(), []).score.every((v) => v === 0)).toBe(true);
   });
 });
 
 describe('touchesForeignHit', () => {
-  it('видит чужую рану сбоку', () => {
+  it('sees a foreign open hit alongside', () => {
     const shots = withMarks({ [idx(5, 5)]: 'hit' });
     expect(touchesForeignHit(shots, [idx(5, 6)])).toBe(true);
   });
 
-  it('видит чужую рану по диагонали — корабли не касаются углами', () => {
+  it('sees a foreign open hit diagonally — ships never touch corner to corner', () => {
     const shots = withMarks({ [idx(5, 5)]: 'hit' });
     expect(touchesForeignHit(shots, [idx(6, 6)])).toBe(true);
   });
 
-  it('свою рану внутри корпуса чужой не считает', () => {
+  it('does not count an open hit inside its own hull as foreign', () => {
     const shots = withMarks({ [idx(5, 5)]: 'hit' });
     expect(touchesForeignHit(shots, [idx(5, 5), idx(5, 6)])).toBe(false);
   });
 
-  it('через клетку — уже не касание', () => {
+  it('one cell apart is no longer a touch', () => {
     const shots = withMarks({ [idx(5, 5)]: 'hit' });
     expect(touchesForeignHit(shots, [idx(5, 7)])).toBe(false);
   });
 
-  it('у края поля не выходит за границы', () => {
+  it('at the edge of the board it does not run past the boundary', () => {
     const shots = withMarks({ [idx(0, 0)]: 'hit' });
     expect(touchesForeignHit(shots, [idx(0, 2)])).toBe(false);
     expect(touchesForeignHit(shots, [idx(1, 1)])).toBe(true);
   });
 });
 
-describe('выбор выстрела по плотности', () => {
-  it('бьёт в клетку с наибольшим весом', () => {
+describe('choosing a shot by density', () => {
+  it('fires at the cell with the highest weight', () => {
     const shots = blank();
     const { score } = densityMap(shots, FULL_FLEET);
     const best = Math.max(...score);
@@ -136,7 +136,7 @@ describe('выбор выстрела по плотности', () => {
     expect(score[cell]).toBe(best);
   });
 
-  it('раненый корабль добивается, а не бросается', () => {
+  it('a wounded ship gets finished off instead of being abandoned', () => {
     const shots = withMarks({ [idx(5, 5)]: 'hit' });
     for (const seed of [1, 2, 3, 4, 5]) {
       const cell = densityShot(shots, FULL_FLEET, openCells(shots), seededRng(seed));
@@ -144,8 +144,8 @@ describe('выбор выстрела по плотности', () => {
     }
   });
 
-  it('когда ни одна расстановка не сходится, честно отдаёт -1', () => {
-    // рана есть, но вокруг всё закрыто: продолжить корабль некуда
+  it('when not a single placement adds up, it honestly returns -1', () => {
+    // there is an open hit, but everything around it is closed: nowhere to continue the ship
     const shots = withMarks({
       [idx(5, 5)]: 'hit',
       [idx(4, 5)]: 'miss',
@@ -156,7 +156,7 @@ describe('выбор выстрела по плотности', () => {
     expect(densityShot(shots, FULL_FLEET, openCells(shots), seededRng(1))).toBe(-1);
   });
 
-  it('в этом тупике Адмирал не встаёт, а падает в мичманский поиск', () => {
+  it('in that dead end the Admiral does not stall — he drops into the Midshipman search', () => {
     const shots = withMarks({
       [idx(5, 5)]: 'hit',
       [idx(4, 5)]: 'miss',
@@ -169,12 +169,12 @@ describe('выбор выстрела по плотности', () => {
     expect(shots[cell]).toBe('unknown');
   });
 
-  it('первый ход делается по чёрным клеткам — так ложится плотность', () => {
+  it('the first move goes on a black square — that is how the density falls', () => {
     const cell = chooseShot(blank(), FULL_FLEET, 'admiral', seededRng(1));
     expect((rowOf(cell) + colOf(cell)) % 2).toBe(0);
   });
 
-  it('никогда не выбирает уже пристрелянную клетку', () => {
+  it('never picks a cell that has already been shot at', () => {
     const rng = seededRng(31);
     const shots = blank();
     for (let n = 0; n < 60; n++) {

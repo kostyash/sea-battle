@@ -4,14 +4,21 @@ import { Board, emptyBoard } from '../domain/board';
 import { CELLS, idx } from '../domain/grid';
 import { canonicalBoard, shipCells, withShip } from '../domain/placement';
 import { fire } from '../domain/shot';
+import { I18n } from '../i18n/i18n';
+import { Lang } from '../i18n/lang';
 import { BoardGrid } from './board-grid';
 
 const cellButtons = (fixture: ComponentFixture<BoardGrid>): HTMLButtonElement[] =>
   Array.from(fixture.nativeElement.querySelectorAll('button.cell'));
 
-// именно div: класс `hull` носит ещё и путь корпуса внутри SVG
+// a div on purpose: the class `hull` is worn by the hull path inside the SVG too
 const hulls = (fixture: ComponentFixture<BoardGrid>): HTMLElement[] =>
   Array.from(fixture.nativeElement.querySelectorAll('div.hull'));
+
+const rowLetters = (fixture: ComponentFixture<BoardGrid>): string[] =>
+  Array.from(fixture.nativeElement.querySelectorAll('.gutter--rows span'), (span: Element) =>
+    (span.textContent ?? '').trim(),
+  );
 
 describe('BoardGrid', () => {
   let fixture: ComponentFixture<BoardGrid>;
@@ -20,7 +27,7 @@ describe('BoardGrid', () => {
     fixture = TestBed.createComponent(BoardGrid);
     fixture.componentRef.setInput('board', board);
     fixture.componentRef.setInput('variant', 'chart');
-    fixture.componentRef.setInput('caption', 'Ваш квадрат');
+    fixture.componentRef.setInput('caption', 'Your square');
     for (const [key, value] of Object.entries(options)) {
       fixture.componentRef.setInput(key, value);
     }
@@ -28,62 +35,70 @@ describe('BoardGrid', () => {
     return fixture;
   };
 
+  const speak = (lang: Lang) => TestBed.inject(I18n).setLang(lang);
+
   beforeEach(() => {
+    // `setLang` remembers the choice in localStorage and the i18n effect stamps
+    // lang/dir onto <html>; `resetTestingModule` clears neither, so without this
+    // a language test would leak into whichever test runs next.
+    localStorage.clear();
+    document.documentElement.removeAttribute('lang');
+    document.documentElement.removeAttribute('dir');
     TestBed.resetTestingModule();
   });
 
-  describe('сетка', () => {
-    it('рисует все сто клеток', () => {
+  describe('the grid', () => {
+    it('draws all one hundred cells', () => {
       render(emptyBoard('player'));
       expect(cellButtons(fixture)).toHaveLength(CELLS);
     });
 
-    it('раскладывает клетки по десять в ряд с ролью строки', () => {
+    it('lays the cells out ten to a row, and gives every row the row role', () => {
       render(emptyBoard('player'));
       const rows = fixture.nativeElement.querySelectorAll('[role="row"]');
       expect(rows).toHaveLength(10);
       expect(rows[0].querySelectorAll('button.cell')).toHaveLength(10);
     });
 
-    it('каждая клетка подписана координатой и состоянием', () => {
+    it('signs every cell with its coordinate and its state', () => {
       render(emptyBoard('player'));
       const cells = cellButtons(fixture);
-      expect(cells[0].getAttribute('aria-label')).toBe('А1 — не пристреляна');
-      expect(cells[idx(1, 3)].getAttribute('aria-label')).toBe('Б4 — не пристреляна');
-      expect(cells[CELLS - 1].getAttribute('aria-label')).toBe('К10 — не пристреляна');
+      expect(cells[0].getAttribute('aria-label')).toBe('A1 — not fired at');
+      expect(cells[idx(1, 3)].getAttribute('aria-label')).toBe('B4 — not fired at');
+      expect(cells[CELLS - 1].getAttribute('aria-label')).toBe('J10 — not fired at');
     });
 
-    it('подпись поля попадает в разметку', () => {
+    it('puts the caption of the board into the markup', () => {
       render(emptyBoard('player'));
       expect(fixture.nativeElement.querySelector('[role="grid"]').getAttribute('aria-label')).toBe(
-        'Ваш квадрат',
+        'Your square',
       );
     });
   });
 
-  describe('интерактивность', () => {
-    it('неактивное поле помечает клетки как недоступные', () => {
+  describe('interactivity', () => {
+    it('an inactive board marks its cells as unavailable', () => {
       render(emptyBoard('player'), { interactive: false });
       expect(cellButtons(fixture).every((b) => b.getAttribute('aria-disabled') === 'true')).toBe(
         true,
       );
     });
 
-    it('неактивные клетки остаются фокусируемыми — иначе прицел улетает', () => {
+    it('inactive cells stay focusable — otherwise the aim flies away', () => {
       render(emptyBoard('player'), { interactive: false });
-      // `disabled` снимал бы фокус с кнопки, и после каждого выстрела
-      // клавиатурный прицел терялся бы на body
+      // `disabled` would pull focus off the button, and after every shot the
+      // keyboard aim would be lost on the body
       expect(cellButtons(fixture).some((b) => b.disabled)).toBe(false);
     });
 
-    it('активное поле открывает клетки', () => {
+    it('an active board opens its cells up', () => {
       render(emptyBoard('player'), { interactive: true });
       expect(cellButtons(fixture).every((b) => b.getAttribute('aria-disabled') === 'false')).toBe(
         true,
       );
     });
 
-    it('фокус переживает выключение и включение поля', () => {
+    it('focus survives the board being switched off and on again', () => {
       render(emptyBoard('player'), { interactive: true });
       const cell = cellButtons(fixture)[idx(3, 3)];
       cell.focus();
@@ -98,7 +113,7 @@ describe('BoardGrid', () => {
       expect(document.activeElement).toBe(cell);
     });
 
-    it('щелчок отдаёт номер клетки', () => {
+    it('a click hands back the number of the cell', () => {
       render(emptyBoard('player'), { interactive: true });
       const picked: number[] = [];
       fixture.componentInstance.cellPick.subscribe((c) => picked.push(c));
@@ -107,7 +122,7 @@ describe('BoardGrid', () => {
       expect(picked).toEqual([idx(3, 7)]);
     });
 
-    it('недоступная клетка щелчок не отдаёт', () => {
+    it('an unavailable cell hands back no click', () => {
       render(emptyBoard('player'), { interactive: false });
       const picked: number[] = [];
       fixture.componentInstance.cellPick.subscribe((c) => picked.push(c));
@@ -116,7 +131,7 @@ describe('BoardGrid', () => {
       expect(picked).toEqual([]);
     });
 
-    it('недоступное поле не водит прицел стрелками', () => {
+    it('an unavailable board does not walk the aim with the arrows', () => {
       render(emptyBoard('player'), { interactive: false });
       cellButtons(fixture)[0].focus();
       fixture.nativeElement
@@ -127,7 +142,7 @@ describe('BoardGrid', () => {
       expect(cellButtons(fixture).findIndex((b) => b.getAttribute('tabindex') === '0')).toBe(0);
     });
 
-    it('правая кнопка просит поворот и не открывает меню', () => {
+    it('the right button asks for a rotation and opens no menu', () => {
       render(emptyBoard('player'), { interactive: true });
       let asked = 0;
       fixture.componentInstance.rotateRequest.subscribe(() => asked++);
@@ -139,7 +154,7 @@ describe('BoardGrid', () => {
       expect(event.defaultPrevented).toBe(true);
     });
 
-    it('на неактивном поле правая кнопка ничего не просит', () => {
+    it('on an inactive board the right button asks for nothing', () => {
       render(emptyBoard('player'), { interactive: false });
       let asked = 0;
       fixture.componentInstance.rotateRequest.subscribe(() => asked++);
@@ -152,7 +167,7 @@ describe('BoardGrid', () => {
     });
   });
 
-  describe('клавиатура', () => {
+  describe('the keyboard', () => {
     const press = (key: string) => {
       const event = new KeyboardEvent('keydown', { key, cancelable: true, bubbles: true });
       fixture.nativeElement.querySelector('[role="grid"]').dispatchEvent(event);
@@ -160,13 +175,13 @@ describe('BoardGrid', () => {
       return event;
     };
 
-    it('в обходе участвует ровно одна клетка', () => {
+    it('exactly one cell takes part in the tab order', () => {
       render(emptyBoard('player'), { interactive: true });
       const reachable = cellButtons(fixture).filter((b) => b.getAttribute('tabindex') === '0');
       expect(reachable).toHaveLength(1);
     });
 
-    it('стрелки двигают прицел по сетке', () => {
+    it('the arrows walk the aim across the grid', () => {
       render(emptyBoard('player'), { interactive: true });
       cellButtons(fixture)[0].focus();
 
@@ -180,7 +195,7 @@ describe('BoardGrid', () => {
       expect(focused).toBe(idx(2, 3));
     });
 
-    it('стрелка не перескакивает через край строки', () => {
+    it('an arrow does not jump over the edge of a row', () => {
       render(emptyBoard('player'), { interactive: true });
       cellButtons(fixture)[idx(0, 9)].focus();
       press('ArrowRight');
@@ -188,7 +203,7 @@ describe('BoardGrid', () => {
       expect(focused).toBe(idx(0, 9));
     });
 
-    it('стрелка не уходит за верхний край', () => {
+    it('an arrow does not walk off the top edge', () => {
       render(emptyBoard('player'), { interactive: true });
       cellButtons(fixture)[0].focus();
       press('ArrowUp');
@@ -196,23 +211,64 @@ describe('BoardGrid', () => {
       expect(focused).toBe(0);
     });
 
-    it('посторонняя клавиша ничего не двигает и не гасит событие', () => {
+    it('an unrelated key moves nothing and does not swallow the event', () => {
       render(emptyBoard('player'), { interactive: true });
       cellButtons(fixture)[0].focus();
       const event = press('Tab');
       expect(event.defaultPrevented).toBe(false);
-      // прицел обязан остаться на месте — без этого тест держал только preventDefault
+      // the aim has to stay put — without this the test only held preventDefault
       expect(cellButtons(fixture).findIndex((b) => b.getAttribute('tabindex') === '0')).toBe(0);
     });
   });
 
-  describe('корабли на карте', () => {
-    it('на своей карте виден весь флот', () => {
+  describe('the language', () => {
+    it('spells the row gutter in the alphabet of the active language', () => {
+      render(emptyBoard('player'));
+      expect(rowLetters(fixture)).toEqual([...'ABCDEFGHIJ']);
+
+      speak('ru');
+      fixture.detectChanges();
+      expect(rowLetters(fixture)).toEqual([...'АБВГДЕЖЗИК']);
+
+      speak('he');
+      fixture.detectChanges();
+      expect(rowLetters(fixture)).toEqual([...'אבגדהוזחטי']);
+    });
+
+    it('spells the label of a cell in the active language', () => {
+      speak('ru');
+      render(emptyBoard('player'));
+      expect(cellButtons(fixture)[idx(1, 3)].getAttribute('aria-label')).toBe(
+        'Б4 — не пристреляна',
+      );
+    });
+
+    it('does not mirror the square in Hebrew — overlays and arrows both count from cell 0', () => {
+      speak('he');
+      render(emptyBoard('player'), { interactive: true });
+
+      expect(fixture.nativeElement.querySelector('.frame').getAttribute('dir')).toBe('ltr');
+
+      cellButtons(fixture)[idx(4, 4)].focus();
+      fixture.nativeElement
+        .querySelector('[role="grid"]')
+        .dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+      fixture.detectChanges();
+
+      // ArrowRight walks forward, not back: in a mirrored square it would not
+      expect(cellButtons(fixture).findIndex((b) => b.getAttribute('tabindex') === '0')).toBe(
+        idx(4, 5),
+      );
+    });
+  });
+
+  describe('the ships on the chart', () => {
+    it('shows the whole fleet on your own chart', () => {
       render(canonicalBoard('player'));
       expect(hulls(fixture)).toHaveLength(10);
     });
 
-    it('силуэт занимает ровно свои клетки по ширине', () => {
+    it('a silhouette covers exactly its own cells across', () => {
       const board = withShip(emptyBoard('player'), 2, 1, 4, 'h');
       render(board);
       const hull = hulls(fixture)[0];
@@ -222,7 +278,7 @@ describe('BoardGrid', () => {
       expect(hull.style.top).toBe('20%');
     });
 
-    it('повёрнутый корабль занимает свои клетки по высоте', () => {
+    it('a turned ship covers its own cells downwards', () => {
       const board = withShip(emptyBoard('player'), 2, 1, 3, 'v');
       render(board);
       const hull = hulls(fixture)[0];
@@ -230,26 +286,26 @@ describe('BoardGrid', () => {
       expect(hull.style.height).toBe('30%');
     });
 
-    it('в чужих водах не видно ничего, пока не потопили', () => {
+    it('shows nothing in foreign waters until it has been sunk', () => {
       render(canonicalBoard('enemy'), { variant: 'abyss' });
       expect(hulls(fixture)).toHaveLength(0);
     });
 
-    it('потопленный корабль наносится на чужой квадрат', () => {
+    it("draws a sunk ship onto the opponent's square", () => {
       let board = canonicalBoard('enemy');
       for (const cell of board.ships[0].cells) board = fire(board, cell).board;
       render(board, { variant: 'abyss' });
       expect(hulls(fixture)).toHaveLength(1);
     });
 
-    it('после боя чужой квадрат вскрывается целиком', () => {
+    it("uncovers the opponent's square in full once the battle is over", () => {
       render(canonicalBoard('enemy'), { variant: 'abyss', surveyed: true });
       expect(hulls(fixture)).toHaveLength(10);
     });
   });
 
-  describe('силуэт под курсором', () => {
-    it('показывает настоящий размер выбранного корабля, а не одну клетку', () => {
+  describe('the silhouette under the cursor', () => {
+    it('shows the real size of the picked ship, not a single cell', () => {
       render(emptyBoard('player'), {
         interactive: true,
         ghost: { cells: shipCells(4, 2, 4, 'h'), valid: true, size: 4, orient: 'h' },
@@ -262,7 +318,7 @@ describe('BoardGrid', () => {
       expect(ghost.style.top).toBe('40%');
     });
 
-    it('повёрнутый силуэт растёт вниз, а не вбок', () => {
+    it('a turned silhouette grows downwards, not sideways', () => {
       render(emptyBoard('player'), {
         interactive: true,
         ghost: { cells: shipCells(1, 1, 3, 'v'), valid: true, size: 3, orient: 'v' },
@@ -272,7 +328,7 @@ describe('BoardGrid', () => {
       expect(ghost.style.width).toBe('10%');
     });
 
-    it('недопустимая постановка помечается', () => {
+    it('marks a placement that is not allowed', () => {
       render(emptyBoard('player'), {
         interactive: true,
         ghost: { cells: shipCells(0, 0, 2, 'h'), valid: false, size: 2, orient: 'h' },
@@ -280,17 +336,17 @@ describe('BoardGrid', () => {
       expect(fixture.nativeElement.querySelector('.ghost').classList).toContain('blocked');
     });
 
-    it('без выбранного корабля силуэта нет', () => {
+    it('with no ship picked there is no silhouette', () => {
       render(emptyBoard('player'), { interactive: true, ghost: null });
       expect(fixture.nativeElement.querySelector('.ghost')).toBeNull();
     });
   });
 
-  describe('отметки выстрелов', () => {
-    it('промах, попадание и потопление помечаются по-разному', () => {
+  describe('the marks left by shots', () => {
+    it('marks a miss, a hit and a sinking differently', () => {
       let board = withShip(emptyBoard('enemy'), 0, 0, 2, 'h');
-      board = fire(board, idx(5, 5)).board; // мимо
-      board = fire(board, idx(0, 0)).board; // попал
+      board = fire(board, idx(5, 5)).board; // wide
+      board = fire(board, idx(0, 0)).board; // on target
       render(board, { variant: 'abyss' });
 
       const cells = cellButtons(fixture);
@@ -298,7 +354,7 @@ describe('BoardGrid', () => {
       expect(cells[idx(0, 0)].classList).toContain('hit');
     });
 
-    it('потопленный корабль помечает все свои клетки', () => {
+    it('a sunk ship marks every one of its cells', () => {
       let board = withShip(emptyBoard('enemy'), 0, 0, 2, 'h');
       board = fire(board, idx(0, 0)).board;
       board = fire(board, idx(0, 1)).board;
@@ -309,11 +365,11 @@ describe('BoardGrid', () => {
       expect(cells[idx(0, 1)].classList).toContain('sunk');
     });
 
-    it('состояние клетки попадает в подпись для чтения с экрана', () => {
+    it('puts the state of a cell into the label a screen reader reads', () => {
       let board = withShip(emptyBoard('enemy'), 0, 0, 1, 'h');
       board = fire(board, idx(0, 0)).board;
       render(board, { variant: 'abyss' });
-      expect(cellButtons(fixture)[idx(0, 0)].getAttribute('aria-label')).toBe('А1 — потоплен');
+      expect(cellButtons(fixture)[idx(0, 0)].getAttribute('aria-label')).toBe('A1 — sunk');
     });
   });
 });

@@ -1,15 +1,15 @@
 import { Injectable, signal } from '@angular/core';
 
 /**
- * Весь звук синтезируется на месте — ни одного загружаемого файла.
- * Контекст просыпается на первом клике, как того требует браузер.
+ * All sound is synthesised on the spot — not a single file is loaded.
+ * The context wakes up on the first click, as the browser demands.
  */
 /**
- * Хранилище настроек может быть недоступно: в песочнице `sandbox="allow-scripts"`
- * или при запрете данных сайта обращение к нему бросает SecurityError. Звук —
- * не та причина, по которой игра имеет право не открыться, поэтому отказ глотаем.
+ * The settings store may be unavailable: inside a `sandbox="allow-scripts"` frame,
+ * or when site data is blocked, touching it throws a SecurityError. Sound is not
+ * a good enough reason for the game to refuse to open, so we swallow the failure.
  */
-/** Громкость общей шины. */
+/** Volume of the shared bus. */
 const BUS_VOLUME = 0.55;
 
 function readMuted(): boolean {
@@ -24,7 +24,7 @@ function rememberMuted(value: boolean): void {
   try {
     localStorage.setItem('sb.muted', value ? '1' : '0');
   } catch {
-    // настройка не переживёт перезагрузку — не повод ломать партию
+    // the setting won't survive a reload — no reason to break the game over it
   }
 }
 
@@ -46,9 +46,9 @@ export class AudioService {
   }
 
   /**
-   * Отсечка в `wake()` работает только при планировании: уже назначенные узлы
-   * доиграют своё. Стон потопления тянется 1.3 с — столько тишины после нажатия
-   * «звук выкл» никто не ждёт, поэтому глушим саму шину.
+   * The cut-off in `wake()` only works at scheduling time: nodes already queued
+   * will play out. The sinking groan runs for 1.3 s — nobody is going to wait
+   * that long for silence after pressing "sound off", so we mute the bus itself.
    */
   private silenceNow(): void {
     if (!this.ctx || !this.bus) return;
@@ -65,7 +65,7 @@ export class AudioService {
     this.blip(660, 0.08, 'triangle', 0.12);
   }
 
-  /** Щелчок при постановке корабля на карту. */
+  /** The click of a ship being placed on the chart. */
   place(): void {
     this.blip(180, 0.07, 'triangle', 0.16);
     this.blip(90, 0.11, 'sine', 0.12, 0.01);
@@ -75,7 +75,7 @@ export class AudioService {
     this.blip(420, 0.05, 'square', 0.05);
   }
 
-  /** Гидролокатор: выстрел ушёл, ждём результата. */
+  /** Sonar: the shot is away, waiting for the result. */
   ping(): void {
     const ctx = this.wake();
     if (!ctx) return;
@@ -99,7 +99,7 @@ export class AudioService {
     }
   }
 
-  /** Всплеск — мимо. */
+  /** A splash — a miss. */
   splash(): void {
     const ctx = this.wake();
     if (!ctx) return;
@@ -118,7 +118,7 @@ export class AudioService {
     src.stop(t + 0.55);
   }
 
-  /** Попадание — глухой удар и треск обшивки. */
+  /** A hit — a dull thump and the crack of splitting plating. */
   hit(): void {
     const ctx = this.wake();
     if (!ctx) return;
@@ -149,7 +149,7 @@ export class AudioService {
     crack.stop(t + 0.3);
   }
 
-  /** Корабль уходит под воду. */
+  /** The ship goes under. */
   sunk(): void {
     const ctx = this.wake();
     if (!ctx) return;
@@ -196,7 +196,7 @@ export class AudioService {
     });
   }
 
-  /* ── внутреннее ─────────────────────────────────────────────────────── */
+  /* ── internals ──────────────────────────────────────────────────────── */
 
   private wake(): AudioContext | null {
     if (this.muted()) return null;

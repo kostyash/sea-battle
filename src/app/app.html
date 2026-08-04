@@ -1,44 +1,54 @@
-<div class="deck" [class.phase-deploy]="deploying()">
+<!-- `inert` while the result card is up. The card calls itself `aria-modal`, which
+     tells a screen reader the rest of the page does not exist — but on its own that
+     is only a claim: Tab still walked out of the card and into the masthead, and the
+     language switch put three more controls there to land on. `inert` makes the
+     claim true for the keyboard as well. -->
+<div class="deck" [class.phase-deploy]="deploying()" [attr.inert]="store.verdictOpen() ? '' : null">
   <header class="masthead">
     <div class="brand">
-      <p class="eyebrow">Учебный полигон · квадрат 10 × 10</p>
-      <h1>Морской бой</h1>
+      <p class="eyebrow">{{ i18n.t('app.eyebrow') }}</p>
+      <h1>{{ i18n.t('app.title') }}</h1>
     </div>
 
     <div class="chrome">
+      <app-lang-switch />
       <button
         type="button"
         class="btn btn--ghost"
         [attr.aria-pressed]="!store.audio.muted()"
         (click)="store.audio.toggle()"
       >
-        {{ store.audio.muted() ? 'Звук выкл' : 'Звук вкл' }}
+        {{ store.audio.muted() ? i18n.t('audio.off') : i18n.t('audio.on') }}
       </button>
-      <button type="button" class="btn btn--ghost" (click)="store.newGame()">Новый бой</button>
+      <button type="button" class="btn btn--ghost" (click)="store.newGame()">
+        {{ i18n.t('action.newGame') }}
+      </button>
     </div>
   </header>
 
   <p class="rail" aria-live="polite">
-    <!-- тревожно мигать имеет право только настоящий ход противника: после
-         поражения turn навсегда остаётся 'enemy', и «Бой окончен» мигал бы тоже -->
+    <!-- only a real opponent's move has the right to blink an alarm: after a
+         defeat turn stays 'enemy' forever, and "Battle over" would blink too -->
     <span class="rail__turn" [class.theirs]="store.phase() === 'battle' && store.turn() === 'enemy'">
       {{ turnWord() }}
     </span>
-    <span class="rail__msg">{{ store.message() }}</span>
+    <span class="rail__msg">{{ store.messageText() }}</span>
     @if (surveyed() && !store.verdictOpen()) {
-      <button type="button" class="rail__link" (click)="store.verdictOpen.set(true)">Показать итог</button>
+      <button type="button" class="rail__link" (click)="store.verdictOpen.set(true)">
+        {{ i18n.t('action.showResult') }}
+      </button>
     }
   </p>
 
   <main class="theatre">
     <section class="sea sea--home">
       <div class="sea__head">
-        <h2>Ваши воды</h2>
-        <span class="sea__note">нанесены на карту</span>
+        <h2>{{ i18n.t('sea.home') }}</h2>
+        <span class="sea__note">{{ i18n.t('sea.home.note') }}</span>
       </div>
       <app-board-grid
         variant="chart"
-        caption="Ваш квадрат"
+        [caption]="i18n.t('board.home')"
         [board]="store.player()"
         [interactive]="deploying()"
         [ghost]="store.ghost()"
@@ -52,12 +62,18 @@
 
     <section class="sea sea--away">
       <div class="sea__head">
-        <h2>Квадрат противника</h2>
-        <span class="sea__note">{{ surveyed() ? 'квадрат нанесён целиком' : store.enemyLosses() + ' из 10 нанесено' }}</span>
+        <h2>{{ i18n.t('sea.away') }}</h2>
+        <span class="sea__note">
+          {{
+            surveyed()
+              ? i18n.t('sea.away.done')
+              : i18n.t('sea.away.progress', { n: store.enemyLosses() })
+          }}
+        </span>
       </div>
       <app-board-grid
         variant="abyss"
-        caption="Квадрат противника"
+        [caption]="i18n.t('board.away')"
         [board]="store.enemy()"
         [interactive]="store.canFire()"
         [surveyed]="surveyed()"

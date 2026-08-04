@@ -1,23 +1,24 @@
 /**
- * Источник случайности как зависимость.
+ * The source of randomness as a dependency.
  *
- * Домен и противник ничего не знают про `Math.random`: им передают `Rng`.
- * Благодаря этому партия воспроизводится по зерну — то же зерно даёт ту же
- * расстановку и ту же последовательность выстрелов, что и делает игру тестируемой.
+ * The domain and the opponent know nothing about `Math.random`: they are handed
+ * an `Rng`. That is what makes a game reproducible from a seed — the same seed
+ * yields the same deployment and the same sequence of shots, which is what makes
+ * the game testable.
  */
 export interface Rng {
-  /** Следующее число в диапазоне [0, 1). */
+  /** The next number in the range [0, 1). */
   next(): number;
-  /** Целое в диапазоне [0, bound). Для bound ≤ 0 всегда 0. */
+  /** An integer in the range [0, bound). For bound ≤ 0 always 0. */
   int(bound: number): number;
-  /** Случайный элемент непустого списка. */
+  /** A random element of a non-empty list. */
   pick<T>(items: readonly T[]): T;
 }
 
 /**
- * mulberry32 — короткий генератор с периодом 2³² и приличным распределением.
- * Криптостойкость здесь не нужна, нужна повторяемость и скорость: за партию
- * противник дёргает его тысячи раз.
+ * mulberry32 — a tiny generator with a period of 2³² and a decent distribution.
+ * Cryptographic strength is not needed here; repeatability and speed are: over a
+ * single game the opponent pulls on it thousands of times.
  */
 export function seededRng(seed: number): Rng {
   let state = seed >>> 0;
@@ -35,15 +36,15 @@ export function seededRng(seed: number): Rng {
     next,
     int,
     pick<T>(items: readonly T[]): T {
-      if (!items.length) throw new RangeError('Rng.pick: пустой список');
+      if (!items.length) throw new RangeError('Rng.pick: empty list');
       return items[int(items.length)];
     },
   };
 }
 
 /**
- * Зерно для настоящей партии. Живёт вне домена по смыслу: это единственное
- * место, где игра берёт непредсказуемость извне.
+ * The seed for a real game. It belongs outside the domain by its very nature:
+ * this is the one place where the game draws unpredictability from outside.
  */
 export function entropySeed(): number {
   const buf = new Uint32Array(1);

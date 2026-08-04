@@ -1,8 +1,9 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { GameStore } from '../core/game-store';
-import { difficultyName } from '../ai/levels';
+import { levelNameKey } from '../ai/levels';
 import { Board } from '../domain/board';
 import { isSunk } from '../domain/fleet';
+import { I18n } from '../i18n/i18n';
 import { ShipGlyph } from './ship-glyph';
 
 interface Pip {
@@ -17,10 +18,10 @@ interface Pip {
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="block">
-      <p class="eyebrow">Донесение</p>
+      <p class="eyebrow">{{ i18n.t('battle.report') }}</p>
       <div class="fleets">
         <div class="fleet">
-          <h3>Ваш флот</h3>
+          <h3>{{ i18n.t('battle.yourFleet') }}</h3>
           <div class="pips">
             @for (p of mine(); track p.id) {
               <span class="pip" [class.lost]="p.lost" [style.width.rem]="p.size * 0.62">
@@ -29,7 +30,8 @@ interface Pip {
             }
           </div>
           <p class="tally">
-            <b>{{ store.playerDecksLeft() }}</b> палуб на плаву
+            <b>{{ store.playerDecksLeft() }}</b>
+            {{ i18n.t('battle.decksAfloat', { n: store.playerDecksLeft() }) }}
           </p>
         </div>
         <div class="fleet">
@@ -42,38 +44,39 @@ interface Pip {
             }
           </div>
           <p class="tally">
-            <b>{{ store.enemyDecksLeft() }}</b> палуб на плаву
+            <b>{{ store.enemyDecksLeft() }}</b>
+            {{ i18n.t('battle.decksAfloat', { n: store.enemyDecksLeft() }) }}
           </p>
         </div>
       </div>
 
       <dl class="stats">
-        <div><dt>Залпов</dt><dd>{{ store.playerStats().shots }}</dd></div>
-        <div><dt>Попаданий</dt><dd>{{ store.playerStats().hits }}</dd></div>
-        <div><dt>Точность</dt><dd>{{ store.playerStats().accuracy }}%</dd></div>
+        <div><dt>{{ i18n.t('stats.shots') }}</dt><dd>{{ store.playerStats().shots }}</dd></div>
+        <div><dt>{{ i18n.t('stats.hits') }}</dt><dd>{{ store.playerStats().hits }}</dd></div>
+        <div><dt>{{ i18n.t('stats.accuracy') }}</dt><dd>{{ store.playerStats().accuracy }}%</dd></div>
       </dl>
     </section>
 
     <section class="block block--log">
-      <p class="eyebrow">Журнал стрельбы</p>
+      <p class="eyebrow">{{ i18n.t('battle.log') }}</p>
       @if (store.log().length) {
         <ol class="log">
           @for (e of store.log(); track e.id) {
             <li [class.theirs]="e.side === 'enemy'" [class]="e.result">
-              <span class="who">{{ e.side === 'player' ? 'МЫ' : 'ОН' }}</span>
-              <span class="cell">{{ e.cell }}</span>
+              <span class="who">{{ i18n.t(e.side === 'player' ? 'log.us' : 'log.them') }}</span>
+              <span class="cell">{{ i18n.coord(e.cell) }}</span>
               <span class="what">
                 @switch (e.result) {
-                  @case ('miss') { мимо }
-                  @case ('hit') { попадание }
-                  @default { {{ e.ship }} потоплен }
+                  @case ('miss') { {{ i18n.t('log.miss') }} }
+                  @case ('hit') { {{ i18n.t('log.hit') }} }
+                  @default { {{ i18n.t('log.sunk', { size: e.shipSize ?? 0 }) }} }
                 }
               </span>
             </li>
           }
         </ol>
       } @else {
-        <p class="hint">Ни одного залпа. Наведите на квадрат противника и стреляйте.</p>
+        <p class="hint">{{ i18n.t('battle.logEmpty') }}</p>
       }
     </section>
   `,
@@ -172,7 +175,8 @@ interface Pip {
     .log {
       list-style: none;
       margin: 0;
-      padding: 0 0.4rem 0 0;
+      padding: 0;
+      padding-inline-end: 0.4rem;
       display: flex;
       flex-direction: column;
       gap: 1px;
@@ -189,19 +193,22 @@ interface Pip {
       padding: 0.22rem 0.4rem;
       font-family: var(--data);
       font-size: 12px;
-      border-left: 2px solid rgba(159, 217, 227, 0.25);
+      border-inline-start: 2px solid rgba(159, 217, 227, 0.25);
       background: rgba(159, 217, 227, 0.03);
       animation: slide-in 0.3s ease both;
     }
     .log li.theirs {
-      border-left-color: rgba(224, 71, 43, 0.4);
+      border-inline-start-color: rgba(224, 71, 43, 0.4);
     }
     .log li.hit,
     .log li.sunk {
       background: rgba(224, 71, 43, 0.09);
     }
+    /* Weight as well as case: Hebrew has no capitals, so text-transform is a
+       no-op on it and the sunk line would be marked by colour alone. */
     .log li.sunk .what {
       color: var(--signal-glow);
+      font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.05em;
     }
@@ -217,10 +224,11 @@ interface Pip {
     .what {
       color: rgba(214, 228, 234, 0.8);
     }
+    /* a new line slides in from the side the text starts on — see --flip */
     @keyframes slide-in {
       from {
         opacity: 0;
-        transform: translateX(-6px);
+        transform: translateX(calc(-6px * var(--flip, 1)));
       }
     }
     .hint {
@@ -237,11 +245,12 @@ interface Pip {
 })
 export class BattlePanel {
   protected readonly store = inject(GameStore);
+  protected readonly i18n = inject(I18n);
 
   protected readonly mine = computed(() => pips(this.store.player()));
   protected readonly theirs = computed(() => pips(this.store.enemy()));
 
-  protected readonly levelName = computed(() => difficultyName(this.store.difficulty()));
+  protected readonly levelName = computed(() => this.i18n.t(levelNameKey(this.store.difficulty())));
 }
 
 function pips(board: Board): Pip[] {

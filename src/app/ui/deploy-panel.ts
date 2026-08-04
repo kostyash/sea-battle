@@ -1,6 +1,7 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { GameStore } from '../core/game-store';
-import { DIFFICULTIES } from '../ai/levels';
+import { DIFFICULTIES, levelHintKey, levelNameKey } from '../ai/levels';
+import { I18n } from '../i18n/i18n';
 import { ShipGlyph } from './ship-glyph';
 
 @Component({
@@ -9,7 +10,7 @@ import { ShipGlyph } from './ship-glyph';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="block">
-      <p class="eyebrow">Состав флота</p>
+      <p class="eyebrow">{{ i18n.t('fleet.title') }}</p>
       <ul class="roster">
         @for (r of store.roster(); track r.size) {
           <li>
@@ -23,8 +24,8 @@ import { ShipGlyph } from './ship-glyph';
             >
               <span class="slot__glyph"><app-ship-glyph [size]="r.size" /></span>
               <span class="slot__label">
-                <span class="slot__name">{{ r.name }}</span>
-                <span class="slot__decks">{{ decks(r.size) }}</span>
+                <span class="slot__name">{{ i18n.shipName(r.size) }}</span>
+                <span class="slot__decks">{{ i18n.t('fleet.decks', { n: r.size }) }}</span>
               </span>
               <span class="slot__count">{{ r.left }}<i>/{{ r.count }}</i></span>
             </button>
@@ -34,33 +35,33 @@ import { ShipGlyph } from './ship-glyph';
 
       <div class="row">
         <button type="button" class="btn btn--ghost" (click)="store.rotate()">
-          {{ store.orient() === 'h' ? 'Вдоль' : 'Поперёк' }}
+          {{ store.orient() === 'h' ? i18n.t('orient.h') : i18n.t('orient.v') }}
           <kbd>R</kbd>
         </button>
-        <button type="button" class="btn btn--ghost" (click)="store.autoPlace()">По жребию</button>
-        <button type="button" class="btn btn--ghost" (click)="store.clearBoard()">Очистить</button>
+        <button type="button" class="btn btn--ghost" (click)="store.autoPlace()">
+          {{ i18n.t('action.autoPlace') }}
+        </button>
+        <button type="button" class="btn btn--ghost" (click)="store.clearBoard()">
+          {{ i18n.t('action.clear') }}
+        </button>
       </div>
 
-      <p class="hint">
-        Выберите корабль, наведите на свою карту и щёлкните. Правая кнопка или
-        <kbd>R</kbd> поворачивает. Щелчок по стоящему кораблю снимает его. Корабли не
-        соприкасаются даже углами.
-      </p>
+      <p class="hint">{{ i18n.t('deploy.hint') }}</p>
     </section>
 
     <section class="block">
-      <p class="eyebrow">Противник</p>
+      <p class="eyebrow">{{ i18n.t('opponent.title') }}</p>
       <div class="levels">
-        @for (d of levels; track d.id) {
+        @for (d of levels; track d) {
           <button
             type="button"
             class="level"
-            [class.picked]="store.difficulty() === d.id"
-            [attr.aria-pressed]="store.difficulty() === d.id"
-            (click)="store.setDifficulty(d.id)"
+            [class.picked]="store.difficulty() === d"
+            [attr.aria-pressed]="store.difficulty() === d"
+            (click)="store.setDifficulty(d)"
           >
-            <span class="level__name">{{ d.name }}</span>
-            <span class="level__hint">{{ d.hint }}</span>
+            <span class="level__name">{{ i18n.t(name(d)) }}</span>
+            <span class="level__hint">{{ i18n.t(hint(d)) }}</span>
           </button>
         }
       </div>
@@ -72,19 +73,23 @@ import { ShipGlyph } from './ship-glyph';
       [disabled]="!store.fleetReady()"
       (click)="store.beginBattle()"
     >
-      {{ store.fleetReady() ? 'К бою' : 'Осталось поставить ' + left() }}
+      {{
+        store.fleetReady()
+          ? i18n.t('action.toBattle')
+          : i18n.t('deploy.remaining', { n: left() })
+      }}
     </button>
   `,
   styles: `
     :host {
       display: flex;
       flex-direction: column;
-      gap: 1.1rem;
+      gap: 0.85rem;
     }
     .block {
       display: flex;
       flex-direction: column;
-      gap: 0.7rem;
+      gap: 0.55rem;
     }
     .roster {
       list-style: none;
@@ -103,15 +108,15 @@ import { ShipGlyph } from './ship-glyph';
       align-items: center;
       gap: 0.7rem;
       width: 100%;
-      padding: 0.42rem 0.6rem;
+      padding: 0.36rem 0.6rem;
       border: 1px solid transparent;
-      border-left: 2px solid rgba(159, 217, 227, 0.2);
+      border-inline-start: 2px solid rgba(159, 217, 227, 0.2);
       background: rgba(159, 217, 227, 0.03);
       transition: all 0.16s ease;
     }
     .slot:hover:not(:disabled) {
       background: rgba(201, 154, 62, 0.08);
-      border-left-color: var(--brass);
+      border-inline-start-color: var(--brass);
     }
     .slot.picked {
       --glyph-fill: rgba(201, 154, 62, 0.22);
@@ -119,7 +124,7 @@ import { ShipGlyph } from './ship-glyph';
       --glyph-detail: rgba(232, 223, 200, 0.8);
       background: rgba(201, 154, 62, 0.13);
       border-color: rgba(201, 154, 62, 0.4);
-      border-left-color: var(--brass);
+      border-inline-start-color: var(--brass);
     }
     .slot:disabled {
       opacity: 0.32;
@@ -136,7 +141,7 @@ import { ShipGlyph } from './ship-glyph';
       line-height: 1.15;
     }
     .slot__name {
-      text-align: left;
+      text-align: start;
       font-size: 15px;
       letter-spacing: 0.03em;
       color: #cfe0e7;
@@ -179,8 +184,8 @@ import { ShipGlyph } from './ship-glyph';
     }
     .hint {
       margin: 0;
-      font-size: 13px;
-      line-height: 1.5;
+      font-size: 12.5px;
+      line-height: 1.42;
       color: rgba(197, 216, 224, 0.6);
     }
     .levels {
@@ -192,10 +197,11 @@ import { ShipGlyph } from './ship-glyph';
       display: flex;
       flex-direction: column;
       align-items: flex-start;
-      gap: 0.1rem;
-      padding: 0.4rem 0.6rem;
+      gap: 0.05rem;
+      padding: 0.32rem 0.6rem;
       border: 1px solid rgba(159, 217, 227, 0.14);
       background: rgba(159, 217, 227, 0.03);
+      text-align: start;
       transition: all 0.16s ease;
     }
     .level:hover {
@@ -218,7 +224,7 @@ import { ShipGlyph } from './ship-glyph';
       color: rgba(197, 216, 224, 0.55);
     }
     .launch {
-      padding: 0.85em 1em;
+      padding: 0.72em 1em;
       font-size: 15px;
       letter-spacing: 0.14em;
     }
@@ -226,16 +232,14 @@ import { ShipGlyph } from './ship-glyph';
 })
 export class DeployPanel {
   protected readonly store = inject(GameStore);
+  protected readonly i18n = inject(I18n);
   protected readonly levels = DIFFICULTIES;
 
-  /** «1 палуба», «2 палубы», «4 палубы» — чтобы размер был виден до наведения. */
-  protected decks(size: number): string {
-    return `${size} ${size === 1 ? 'палуба' : 'палубы'}`;
-  }
+  protected readonly name = levelNameKey;
+  protected readonly hint = levelHintKey;
 
-  protected left(): string {
-    const n = this.store.roster().reduce((sum, r) => sum + r.left, 0);
-    const word = n === 1 ? 'корабль' : n < 5 ? 'корабля' : 'кораблей';
-    return `${n} ${word}`;
-  }
+  /** How many pennants are still off the chart — the count the button reports. */
+  protected readonly left = computed(() =>
+    this.store.roster().reduce((sum, r) => sum + r.left, 0),
+  );
 }

@@ -18,25 +18,25 @@ import { seededRng } from './rng';
 const board = () => emptyBoard('player');
 
 describe('shipCells', () => {
-  it('раскладывает корабль вдоль строки от носа', () => {
+  it('lays the ship out along a row, starting from the bow', () => {
     expect(shipCells(0, 0, 4, 'h')).toEqual([0, 1, 2, 3]);
   });
 
-  it('раскладывает корабль вдоль столбца', () => {
+  it('lays the ship out along a column', () => {
     expect(shipCells(0, 0, 3, 'v')).toEqual([0, 10, 20]);
   });
 
-  it('однопалубный — одна клетка, ориентация не важна', () => {
+  it('a single-decker is one cell — orientation does not matter', () => {
     expect(shipCells(4, 5, 1, 'h')).toEqual([45]);
     expect(shipCells(4, 5, 1, 'v')).toEqual([45]);
   });
 
-  it('впритык к правому и нижнему краю ещё помещается', () => {
+  it('flush against the right and the bottom edge it still fits', () => {
     expect(shipCells(0, 6, 4, 'h')).toEqual([6, 7, 8, 9]);
     expect(shipCells(6, 0, 4, 'v')).toEqual([60, 70, 80, 90]);
   });
 
-  it('за краем не помещается — пустой список', () => {
+  it('past the edge it does not fit — an empty list', () => {
     expect(shipCells(0, 7, 4, 'h')).toEqual([]);
     expect(shipCells(7, 0, 4, 'v')).toEqual([]);
     expect(shipCells(-1, 0, 2, 'h')).toEqual([]);
@@ -45,32 +45,32 @@ describe('shipCells', () => {
 });
 
 describe('clippedCells', () => {
-  it('внутри поля совпадает с shipCells', () => {
+  it('inside the board it agrees with shipCells', () => {
     expect(clippedCells(3, 3, 3, 'h')).toEqual(shipCells(3, 3, 3, 'h'));
   });
 
-  it('на краю отдаёт только попавшие клетки, а не пустоту', () => {
+  it('at the edge it gives back only the cells that landed, not emptiness', () => {
     expect(clippedCells(0, 8, 4, 'h')).toEqual([8, 9]);
     expect(clippedCells(8, 0, 4, 'v')).toEqual([80, 90]);
   });
 
-  it('целиком за полем — пусто', () => {
+  it('entirely off the board — empty', () => {
     expect(clippedCells(-3, 0, 2, 'v')).toEqual([]);
   });
 });
 
 describe('aura', () => {
-  it('вокруг клетки в середине поля восемь соседей', () => {
+  it('a cell in the middle of the board has eight neighbours around it', () => {
     const ring = aura([idx(5, 5)]);
     expect(ring).toHaveLength(8);
     expect(ring).not.toContain(idx(5, 5));
   });
 
-  it('в углу соседей только три', () => {
+  it('in a corner there are only three neighbours', () => {
     expect(aura([idx(0, 0)]).sort((a, b) => a - b)).toEqual([idx(0, 1), idx(1, 0), idx(1, 1)]);
   });
 
-  it('кольцо вокруг двухпалубного включает диагонали и не включает сам корабль', () => {
+  it('the ring around a two-decker includes the diagonals and excludes the ship itself', () => {
     const cells = shipCells(5, 5, 2, 'h');
     const ring = aura(cells);
     expect(ring).toHaveLength(10);
@@ -79,37 +79,37 @@ describe('aura', () => {
     expect(ring).toContain(idx(6, 7));
   });
 
-  it('каждая клетка кольца встречается один раз', () => {
+  it('every cell of the ring appears exactly once', () => {
     const ring = aura(shipCells(2, 2, 4, 'h'));
     expect(new Set(ring).size).toBe(ring.length);
   });
 });
 
 describe('canPlace', () => {
-  it('на пустом поле ставится куда угодно в пределах квадрата', () => {
+  it('on an empty board it goes anywhere within the square', () => {
     expect(canPlace(board(), 0, 0, 4, 'h')).toBe(true);
     expect(canPlace(board(), 9, 9, 1, 'h')).toBe(true);
   });
 
-  it('за край не ставится', () => {
+  it('it does not go past the edge', () => {
     expect(canPlace(board(), 0, 7, 4, 'h')).toBe(false);
   });
 
-  it('поверх другого корабля не ставится', () => {
+  it('it does not go on top of another ship', () => {
     const b = withShip(board(), 5, 5, 2, 'h');
     expect(canPlace(b, 5, 5, 1, 'h')).toBe(false);
     expect(canPlace(b, 5, 6, 1, 'h')).toBe(false);
   });
 
-  it('борт к борту не ставится', () => {
+  it('it does not go side by side with another ship', () => {
     const b = withShip(board(), 5, 5, 2, 'h');
-    expect(canPlace(b, 5, 4, 1, 'h')).toBe(false); // слева
-    expect(canPlace(b, 5, 7, 1, 'h')).toBe(false); // справа
-    expect(canPlace(b, 4, 5, 1, 'h')).toBe(false); // сверху
-    expect(canPlace(b, 6, 6, 1, 'h')).toBe(false); // снизу
+    expect(canPlace(b, 5, 4, 1, 'h')).toBe(false); // to the left
+    expect(canPlace(b, 5, 7, 1, 'h')).toBe(false); // to the right
+    expect(canPlace(b, 4, 5, 1, 'h')).toBe(false); // above
+    expect(canPlace(b, 6, 6, 1, 'h')).toBe(false); // below
   });
 
-  it('углом к углу тоже не ставится — главное правило', () => {
+  it('corner to corner is out too — the main rule of the game', () => {
     const b = withShip(board(), 5, 5, 1, 'h');
     for (const [dr, dc] of [
       [-1, -1],
@@ -121,22 +121,22 @@ describe('canPlace', () => {
     }
   });
 
-  it('через клетку — уже можно', () => {
+  it('one cell apart is already allowed', () => {
     const b = withShip(board(), 5, 5, 1, 'h');
     expect(canPlace(b, 5, 7, 1, 'h')).toBe(true);
     expect(canPlace(b, 7, 5, 1, 'h')).toBe(true);
     expect(canPlace(b, 3, 3, 1, 'h')).toBe(true);
   });
 
-  it('длинный корабль отвергается, если задевает чужой борт хотя бы одной палубой', () => {
+  it('a long ship is rejected if even one of its decks brushes another hull', () => {
     const b = withShip(board(), 0, 0, 1, 'h');
     expect(canPlace(b, 1, 1, 4, 'h')).toBe(false);
     expect(canPlace(b, 2, 0, 4, 'h')).toBe(true);
   });
 });
 
-describe('withShip и withoutShipAt', () => {
-  it('постановка не трогает исходное поле', () => {
+describe('withShip and withoutShipAt', () => {
+  it('placing a ship does not touch the original board', () => {
     const before = board();
     const after = withShip(before, 0, 0, 3, 'h');
     expect(before.ships).toHaveLength(0);
@@ -144,14 +144,14 @@ describe('withShip и withoutShipAt', () => {
     expect(after.ships).toHaveLength(1);
   });
 
-  it('shipAt заполняется идентификатором корабля', () => {
+  it('shipAt is filled in with the id of the ship', () => {
     const b = withShip(board(), 2, 3, 3, 'h');
     const ship = b.ships[0];
     for (const c of ship.cells) expect(b.shipAt[c]).toBe(ship.id);
     expect(b.shipAt.filter((v) => v !== -1)).toHaveLength(3);
   });
 
-  it('снятие очищает ровно клетки этого корабля', () => {
+  it('removal clears exactly the cells of that one ship', () => {
     let b = withShip(board(), 0, 0, 2, 'h');
     b = withShip(b, 5, 5, 3, 'h');
     const removed = withoutShipAt(b, 1);
@@ -161,23 +161,23 @@ describe('withShip и withoutShipAt', () => {
     expect(removed.shipAt[55]).not.toBe(-1);
   });
 
-  it('снять можно за любую палубу, не только за нос', () => {
+  it('a ship can be removed by any of its decks, not only by the bow', () => {
     const b = withShip(board(), 0, 0, 4, 'h');
     expect(withoutShipAt(b, 3).ships).toHaveLength(0);
   });
 
-  it('снятие с пустой клетки ничего не меняет', () => {
+  it('removing from an empty cell changes nothing', () => {
     const b = withShip(board(), 0, 0, 2, 'h');
     expect(withoutShipAt(b, 55)).toBe(b);
   });
 
-  it('битая ссылка в shipAt не роняет снятие', () => {
+  it('a dangling reference in shipAt does not break removal', () => {
     const b = withShip(board(), 0, 0, 2, 'h');
     const corrupted = { ...b, ships: [] };
     expect(withoutShipAt(corrupted, 0)).toBe(corrupted);
   });
 
-  it('id не переиспользуются после снятия — иначе shipAt указал бы не на тот корабль', () => {
+  it('ids are not reused after removal — otherwise shipAt would point at the wrong ship', () => {
     let b = withShip(board(), 0, 0, 1, 'h');
     b = withShip(b, 0, 2, 1, 'h');
     b = withShip(b, 0, 4, 1, 'h');
@@ -187,7 +187,7 @@ describe('withShip и withoutShipAt', () => {
     b = withShip(b, 0, 6, 1, 'h');
     expect(b.ships.map((s) => s.id)).toEqual([0, 2, 3]);
 
-    // каждая занятая клетка указывает на существующий корабль
+    // every occupied cell points at a ship that really exists
     for (let c = 0; c < b.shipAt.length; c++) {
       if (b.shipAt[c] === -1) continue;
       expect(b.ships.find((s) => s.id === b.shipAt[c])?.cells).toContain(c);
@@ -196,30 +196,30 @@ describe('withShip и withoutShipAt', () => {
 });
 
 describe('legalSpots', () => {
-  it('на пустом поле однопалубный встаёт в любую клетку и ровно один раз', () => {
+  it('on an empty board a single-decker fits every cell and exactly once', () => {
     const spots = legalSpots(board(), 1);
     expect(spots).toHaveLength(100);
     expect(spots.every(([, , o]) => o === 'h')).toBe(true);
   });
 
-  it('для многопалубного считает обе ориентации', () => {
-    // 7 стартов в строке × 10 строк, столько же по столбцам
+  it('for a multi-decker it counts both orientations', () => {
+    // 7 starts per row × 10 rows, and just as many down the columns
     expect(legalSpots(board(), 4)).toHaveLength(70 + 70);
   });
 
-  it('занятое поле сокращает список', () => {
+  it('an occupied board shortens the list', () => {
     const b = withShip(board(), 0, 0, 1, 'h');
     expect(legalSpots(b, 1).length).toBeLessThan(100);
   });
 });
 
-/** Полная проверка легальности расстановки по правилам. */
+/** Full check that a deployment is legal by the rules of the game. */
 function violations(cells: readonly number[][], shipAt: readonly number[]): string[] {
   const bad: string[] = [];
   const seen = new Set<number>();
   for (const ship of cells) {
     for (const c of ship) {
-      if (seen.has(c)) bad.push(`клетка ${c} занята дважды`);
+      if (seen.has(c)) bad.push(`cell ${c} is occupied twice`);
       seen.add(c);
     }
     const own = new Set(ship);
@@ -232,7 +232,7 @@ function violations(cells: readonly number[][], shipAt: readonly number[]): stri
           const nk = k + dk;
           if (nr < 0 || nr >= SIZE || nk < 0 || nk >= SIZE) continue;
           const n = idx(nr, nk);
-          if (!own.has(n) && shipAt[n] !== -1) bad.push(`корабли соприкасаются в ${n}`);
+          if (!own.has(n) && shipAt[n] !== -1) bad.push(`ships touch at ${n}`);
         }
       }
     }
@@ -241,25 +241,25 @@ function violations(cells: readonly number[][], shipAt: readonly number[]): stri
 }
 
 describe('randomBoard', () => {
-  it('одно зерно — одна и та же расстановка', () => {
+  it('one seed — one and the same deployment', () => {
     const a = randomBoard(seededRng(777), 'enemy');
     const b = randomBoard(seededRng(777), 'enemy');
     expect(a.shipAt).toEqual(b.shipAt);
     expect(a.ships).toEqual(b.ships);
   });
 
-  it('разные зёрна дают разные расстановки', () => {
+  it('different seeds give different deployments', () => {
     const a = randomBoard(seededRng(1), 'enemy');
     const b = randomBoard(seededRng(2), 'enemy');
     expect(a.shipAt).not.toEqual(b.shipAt);
   });
 
-  it('владелец поля сохраняется', () => {
+  it('the owner of the board is preserved', () => {
     expect(randomBoard(seededRng(5), 'player').owner).toBe('player');
     expect(randomBoard(seededRng(5), 'enemy').owner).toBe('enemy');
   });
 
-  it('свойство: 1000 засеянных расстановок легальны', () => {
+  it('property: 1000 seeded deployments are all legal', () => {
     for (let seed = 0; seed < 1000; seed++) {
       const b = randomBoard(seededRng(seed), 'enemy');
 
@@ -278,31 +278,30 @@ describe('randomBoard', () => {
       expect(violations(b.ships.map((s) => s.cells), b.shipAt)).toEqual([]);
       expect(b.shots.every((v) => v === 'unknown')).toBe(true);
     }
-    // тысяча расстановок с полной проверкой — секунды даже на быстрой машине,
-    // а на бегунке CI и все пять, поэтому срок задан явно
+    // a thousand deployments with the full check take seconds even on a fast machine,
+    // and all five of them on a CI runner, so the timeout is spelled out
   }, 30_000);
 });
 
-describe('randomBoard без запаса попыток', () => {
-  it('падает на запасную расстановку, а не отдаёт пустое поле', () => {
+describe('randomBoard with no attempts to spare', () => {
+  it('falls back to the spare deployment instead of handing back an empty board', () => {
     const b = randomBoard(seededRng(3), 'enemy', 0);
     expect(b.ships).toHaveLength(FLEET_SHIPS);
     expect(b.shipAt).toEqual(canonicalBoard('enemy').shipAt);
   });
 });
 
-describe('canonicalBoard — запасная расстановка', () => {
-  it('это полный и легальный флот, а не пустое поле', () => {
+describe('canonicalBoard — the spare deployment', () => {
+  it('it is a full and legal fleet, not an empty board', () => {
     const b = canonicalBoard('enemy');
     expect(b.ships).toHaveLength(FLEET_SHIPS);
     expect(b.shipAt.filter((v) => v !== -1)).toHaveLength(TOTAL_DECKS);
     expect(violations(b.ships.map((s) => s.cells), b.shipAt)).toEqual([]);
   });
 
-  it('состав совпадает с уставным', () => {
+  it('its composition matches the regulation fleet', () => {
     const bySize = new Map<number, number>();
     for (const s of canonicalBoard('enemy').ships) bySize.set(s.size, (bySize.get(s.size) ?? 0) + 1);
     for (const spec of FLEET_SPEC) expect(bySize.get(spec.size)).toBe(spec.count);
   });
 });
-

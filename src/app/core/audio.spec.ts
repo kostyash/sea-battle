@@ -3,9 +3,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AudioService } from './audio';
 
 /**
- * Звук синтезируется на WebAudio, которого в jsdom нет. Поддельный контекст
- * позволяет проверить не «как звучит», а то, ради чего этот код и написан:
- * что игра не падает без звука и что «выкл» действительно выключает.
+ * Sound is synthesised with WebAudio, which jsdom does not have. A fake context
+ * lets us check not "how it sounds" but the thing this code was written for:
+ * that the game does not fall over without sound, and that "off" really does mute.
  */
 class FakeParam {
   value = 0;
@@ -96,18 +96,18 @@ describe('AudioService', () => {
   });
 
   afterEach(() => {
-    // Подмена Storage.prototype глобальна: не сними её — и следующий тест будет
-    // читать чужой обман вместо хранилища. Снимаем безусловно, а не в конце теста,
-    // который может до этого конца и не дойти.
+    // The Storage.prototype stub is global: leave it in place and the next test will
+    // read somebody else's deception instead of the storage. We undo it unconditionally,
+    // not at the end of a test that may never reach its end.
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
     localStorage.clear();
   });
 
-  describe('недоступное хранилище не роняет игру', () => {
-    it('запрет на чтение не мешает создать службу', () => {
+  describe('unavailable storage does not bring the game down', () => {
+    it('a ban on reading does not stop the service from being created', () => {
       vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
-        throw new DOMException('Отказано', 'SecurityError');
+        throw new DOMException('Denied', 'SecurityError');
       });
 
       let audio: AudioService | null = null;
@@ -115,10 +115,10 @@ describe('AudioService', () => {
       expect(audio!.muted()).toBe(false);
     });
 
-    it('запрет на запись не мешает переключить звук', () => {
+    it('a ban on writing does not stop the sound from being toggled', () => {
       const audio = service();
       vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
-        throw new DOMException('Отказано', 'SecurityError');
+        throw new DOMException('Denied', 'SecurityError');
       });
 
       expect(() => audio.toggle()).not.toThrow();
@@ -126,17 +126,17 @@ describe('AudioService', () => {
     });
   });
 
-  describe('настройка запоминается', () => {
-    it('по умолчанию звук включён', () => {
+  describe('the setting is remembered', () => {
+    it('by default the sound is on', () => {
       expect(service().muted()).toBe(false);
     });
 
-    it('прошлый выбор восстанавливается', () => {
+    it('the previous choice is restored', () => {
       localStorage.setItem('sb.muted', '1');
       expect(service().muted()).toBe(true);
     });
 
-    it('переключение пишется в хранилище', () => {
+    it('a toggle is written to the storage', () => {
       const audio = service();
       audio.toggle();
       expect(localStorage.getItem('sb.muted')).toBe('1');
@@ -145,21 +145,21 @@ describe('AudioService', () => {
     });
   });
 
-  describe('выключение обрывает уже звучащее', () => {
-    it('шина глушится сразу, а не после затухания', () => {
+  describe('muting cuts off whatever is already sounding', () => {
+    it('the bus is silenced at once, not after the fade-out', () => {
       const audio = service();
-      audio.sunk(); // разбудили контекст, запланировали длинный стон
+      audio.sunk(); // woke the context up, scheduled a long groan
       const ctx = TestBed.inject(AudioService) as unknown as { ctx: FakeCtx };
       const bus = ctx.ctx.bus!;
       bus.gain.calls.length = 0;
 
-      audio.toggle(); // выкл
+      audio.toggle(); // off
 
       expect(bus.gain.calls).toContain('cancel');
       expect(bus.gain.value).toBeCloseTo(0.0001);
     });
 
-    it('включение возвращает громкость', () => {
+    it('unmuting brings the volume back', () => {
       const audio = service();
       audio.sunk();
       const ctx = TestBed.inject(AudioService) as unknown as { ctx: FakeCtx };
@@ -171,15 +171,15 @@ describe('AudioService', () => {
       expect(bus.gain.value).toBeCloseTo(0.55);
     });
 
-    it('выключение до первого звука ничего не ломает', () => {
+    it('muting before the first sound breaks nothing', () => {
       const audio = service();
       expect(() => audio.toggle()).not.toThrow();
       expect(FakeCtx.created).toBe(0);
     });
   });
 
-  describe('без WebAudio игра продолжается', () => {
-    it('отсутствие AudioContext не бросает исключений', () => {
+  describe('without WebAudio the game carries on', () => {
+    it('a missing AudioContext throws no exceptions', () => {
       vi.stubGlobal('AudioContext', undefined);
       const audio = service();
       expect(() => {
@@ -194,7 +194,7 @@ describe('AudioService', () => {
       }).not.toThrow();
     });
 
-    it('в тишине контекст не создаётся вовсе', () => {
+    it('in silence the context is not created at all', () => {
       localStorage.setItem('sb.muted', '1');
       const audio = service();
       audio.hit();
@@ -203,8 +203,8 @@ describe('AudioService', () => {
     });
   });
 
-  describe('звуки партии', () => {
-    it('контекст создаётся один раз на все звуки', () => {
+  describe('the sounds of a game', () => {
+    it('the context is created once for all the sounds', () => {
       const audio = service();
       audio.place();
       audio.hit();
@@ -212,7 +212,7 @@ describe('AudioService', () => {
       expect(FakeCtx.created).toBe(1);
     });
 
-    it('каждый звук запускает и останавливает свои узлы', () => {
+    it('every sound starts and then stops its own nodes', () => {
       const audio = service();
       audio.hit();
       const ctx = TestBed.inject(AudioService) as unknown as { ctx: FakeCtx };
@@ -221,7 +221,7 @@ describe('AudioService', () => {
       expect(sounding.every((n) => n.stopped > 0)).toBe(true);
     });
 
-    it('усыплённый контекст будится', () => {
+    it('a suspended context gets woken up', () => {
       const audio = service();
       audio.place();
       const ctx = TestBed.inject(AudioService) as unknown as { ctx: FakeCtx };

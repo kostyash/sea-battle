@@ -3,8 +3,8 @@ import { chooseShot } from '../ai/opponent';
 import { Difficulty } from '../ai/levels';
 import { AudioService } from './audio';
 import { Board, ShotResult, emptyBoard } from '../domain/board';
-import { FLEET_SHIPS, FLEET_SPEC, isSunk, shipName } from '../domain/fleet';
-import { Orientation, Side, coordLabel } from '../domain/grid';
+import { FLEET_SHIPS, FLEET_SPEC, isSunk } from '../domain/fleet';
+import { Orientation, Side } from '../domain/grid';
 import {
   canPlace,
   clippedCells,
@@ -15,44 +15,52 @@ import {
 } from '../domain/placement';
 import { entropySeed, seededRng } from '../domain/rng';
 import { afloatSizes, fire, isFleetDestroyed } from '../domain/shot';
+import { I18n } from '../i18n/i18n';
+import { MsgKey } from '../i18n/en';
+import { Msg } from '../i18n/phrase';
 
 export type Phase = 'deploy' | 'battle' | 'over';
 
 /**
- * Паузы между ходами. Это не украшение: за них проигрывается всплеск, ложится
- * силуэт потопленного и читается строка состояния. Вынесены наружу, чтобы тесты
- * крутили время по именам, а не по магическим числам, подобранным на глаз.
+ * The pauses between moves. Not decoration: they are when the splash plays, the
+ * silhouette of a sunk ship settles and the status line gets read. Pulled out so
+ * that tests can wind the clock by name rather than by magic numbers picked by eye.
  */
 export const PAUSE = {
-  /** Попадание: пауза перед тем, как снова разрешить выстрел. */
+  /** A hit: the pause before firing is allowed again. */
   afterHit: 420,
-  /** Промах игрока: сколько противник «думает» перед своим залпом. */
+  /** The player missed: how long the opponent "thinks" before its salvo. */
   enemyThinks: 950,
-  /** Промах противника: пауза перед возвратом хода игроку. */
+  /** The opponent missed: the pause before the turn comes back to the player. */
   turnBack: 600,
-  /** Попадание противника: пауза перед его следующим залпом. */
+  /** The opponent hit: the pause before its next salvo. */
   enemyVolley: 1050,
-  /** Последний залп: пауза перед объявлением итога. */
+  /** The last salvo: the pause before the result is announced. */
   beforeFinish: 900,
-  /** Съёмка квадрата перед тем, как показать итоговую карточку. */
+  /** Surveying the square before the result card is shown. */
   beforeVerdict: 1500,
 } as const;
 
 /**
- * Зерно партии. В игре берётся из энтропии, в тестах подменяется — и тогда
- * и расстановка противника, и его выстрелы повторяются в точности.
+ * The seed of a game. Taken from entropy when playing, substituted in tests —
+ * and then both the opponent's deployment and its shots repeat exactly.
  */
-export const GAME_SEED = new InjectionToken<number>('зерно партии', {
+export const GAME_SEED = new InjectionToken<number>('game seed', {
   providedIn: 'root',
   factory: entropySeed,
 });
 
+/**
+ * A line of the firing log, kept as data rather than as a sentence: the cell is
+ * a number and a sunk ship is a length, so the log re-reads itself in the new
+ * language when the player switches mid-game.
+ */
 export interface LogEntry {
   id: number;
   side: Side;
-  cell: string;
+  cell: number;
   result: ShotResult;
-  ship: string | null;
+  shipSize: number | null;
 }
 
 export interface Splash {
@@ -70,30 +78,34 @@ interface Tally {
 @Injectable({ providedIn: 'root' })
 export class GameStore {
   readonly audio = inject(AudioService);
+  private readonly i18n = inject(I18n);
 
-  /** Единственный источник случайности партии — см. `GAME_SEED`. */
+  /** The one source of randomness in a game — see `GAME_SEED`. */
   private rng = seededRng(inject(GAME_SEED));
 
-  /* ── состояние партии ───────────────────────────────────────────────── */
+  /* ── the state of a game ────────────────────────────────────────────── */
 
   readonly phase = signal<Phase>('deploy');
-  readonly difficulty = signal<Difficulty>('michman');
+  readonly difficulty = signal<Difficulty>('midshipman');
   readonly player = signal<Board>(emptyBoard('player'));
   readonly enemy = signal<Board>(randomBoard(this.rng, 'enemy'));
   readonly turn = signal<Side>('player');
-  /** Ход в процессе: анимация выстрела или раздумье противника. */
+  /** A move is under way: a shot animating, or the opponent thinking. */
   readonly busy = signal(false);
   readonly winner = signal<Side | null>(null);
-  /** Итоговая карточка ждёт, пока квадрат ляжет на бумагу, и её можно убрать. */
+  /** The result card waits for the square to be charted, and can be dismissed. */
   readonly verdictOpen = signal(false);
   readonly log = signal<LogEntry[]>([]);
   readonly splash = signal<Splash | null>(null);
-  readonly message = signal('Расставьте флот в своих водах');
+
+  /** The status line, still as a key and its data — see `messageText`. */
+  readonly message = signal<Msg<MsgKey>>({ key: 'msg.deploy' });
+  readonly messageText = computed(() => this.i18n.say(this.message()));
 
   private readonly playerTally = signal<Tally>({ shots: 0, hits: 0 });
   private readonly enemyTally = signal<Tally>({ shots: 0, hits: 0 });
 
-  /* ── расстановка ────────────────────────────────────────────────────── */
+  /* ── deployment ─────────────────────────────────────────────────────── */
 
   readonly pickedSize = signal<number | null>(4);
   readonly orient = signal<Orientation>('h');
@@ -109,7 +121,7 @@ export class GameStore {
 
   readonly fleetReady = computed(() => this.player().ships.length === FLEET_SHIPS);
 
-  /** Силуэт под курсором во время расстановки: где встанет корабль и можно ли. */
+  /** The silhouette under the cursor while deploying: where it lands, and whether it may. */
   readonly ghost = computed(() => {
     if (this.phase() !== 'deploy') return null;
     const cell = this.hover();
@@ -123,7 +135,7 @@ export class GameStore {
     return { cells: full.length ? full : clippedCells(row, col, size, orient), valid, size, orient };
   });
 
-  /* ── сводка боя ─────────────────────────────────────────────────────── */
+  /* ── the battle summary ─────────────────────────────────────────────── */
 
   readonly playerStats = computed(() => summarise(this.playerTally()));
   readonly enemyStats = computed(() => summarise(this.enemyTally()));
@@ -140,14 +152,14 @@ export class GameStore {
     () => this.phase() === 'battle' && this.turn() === 'player' && !this.busy(),
   );
 
-  /** Растёт при каждом новом бое — гасит таймеры прошлой партии. */
+  /** Grows with every new battle — kills the timers of the previous game. */
   private era = 0;
-  /** Итог уже убирали руками — карточка не должна всплыть снова по таймеру. */
+  /** The result was already dismissed by hand — it must not pop back up on a timer. */
   private verdictDismissed = false;
   private logSeq = 0;
   private splashSeq = 0;
 
-  /* ── расстановка: действия ──────────────────────────────────────────── */
+  /* ── deployment: actions ────────────────────────────────────────────── */
 
   pickSize(size: number): void {
     this.pickedSize.set(size);
@@ -163,7 +175,7 @@ export class GameStore {
     if (this.phase() === 'deploy') this.hover.set(cell);
   }
 
-  /** Клик по своей карте: поставить выбранный корабль или снять уже стоящий. */
+  /** A click on your own chart: place the picked ship, or take back one already standing. */
   placeAt(cell: number): void {
     if (this.phase() !== 'deploy') return;
     const board = this.player();
@@ -173,34 +185,32 @@ export class GameStore {
       this.player.set(withoutShipAt(board, cell));
       this.pickedSize.set(removed.size);
       this.audio.rotate();
-      this.message.set(`${shipName(removed.size)} снят с карты`);
+      this.message.set({ key: 'msg.shipRemoved', params: { size: removed.size } });
       return;
     }
 
     const size = this.pickedSize();
     if (size === null) {
-      this.message.set('Сначала выберите корабль в составе флота');
+      this.message.set({ key: 'msg.pickFirst' });
       return;
     }
     const left = this.roster().find((r) => r.size === size)?.left ?? 0;
     if (left <= 0) {
-      this.message.set(`${shipName(size)} уже весь на карте`);
+      this.message.set({ key: 'msg.allPlaced', params: { size } });
       return;
     }
 
     const row = Math.floor(cell / 10);
     const col = cell % 10;
     if (!canPlace(board, row, col, size, this.orient())) {
-      this.message.set('Здесь не встанет: корабли не соприкасаются даже углами');
+      this.message.set({ key: 'msg.noRoom' });
       return;
     }
 
     this.player.set(withShip(board, row, col, size, this.orient()));
     this.audio.place();
     this.autoPickNext();
-    this.message.set(
-      this.fleetReady() ? 'Флот на позиции. К бою!' : 'Продолжайте расстановку',
-    );
+    this.message.set({ key: this.fleetReady() ? 'msg.fleetReady' : 'msg.keepPlacing' });
   }
 
   autoPlace(): void {
@@ -208,7 +218,7 @@ export class GameStore {
     this.player.set(randomBoard(this.rng, 'player'));
     this.pickedSize.set(null);
     this.audio.place();
-    this.message.set('Флот расставлен по жребию. Можно менять — щёлкните по кораблю.');
+    this.message.set({ key: 'msg.autoPlaced' });
   }
 
   clearBoard(): void {
@@ -216,7 +226,7 @@ export class GameStore {
     this.player.set(emptyBoard('player'));
     this.pickedSize.set(4);
     this.audio.rotate();
-    this.message.set('Карта чиста. Начнём заново.');
+    this.message.set({ key: 'msg.cleared' });
   }
 
   setDifficulty(level: Difficulty): void {
@@ -224,7 +234,7 @@ export class GameStore {
     this.difficulty.set(level);
   }
 
-  /* ── бой ────────────────────────────────────────────────────────────── */
+  /* ── the battle ─────────────────────────────────────────────────────── */
 
   beginBattle(): void {
     if (!this.fleetReady()) return;
@@ -232,11 +242,11 @@ export class GameStore {
     this.turn.set('player');
     this.hover.set(null);
     this.pickedSize.set(null);
-    this.message.set('Ваш залп. Называйте квадрат.');
+    this.message.set({ key: 'msg.yourSalvo' });
     this.audio.ping();
   }
 
-  /** Выстрел игрока по водам противника. */
+  /** The player's shot into the opponent's waters. */
   fireAt(cell: number): void {
     if (!this.canFire()) return;
     const board = this.enemy();
@@ -253,13 +263,14 @@ export class GameStore {
     this.record('player', cell, outcome.result, outcome.result === 'sunk' ? outcome.ship!.size : null);
     this.report(cell, outcome.result);
 
-    // сообщение пишется до проверки на разгром: решающий залп тоже надо назвать
+    // the message is written before the check for a destroyed fleet: the
+    // deciding salvo has to be called out too
     this.message.set(
       outcome.result === 'miss'
-        ? 'Мимо. Противник берёт прицел.'
+        ? { key: 'msg.miss' }
         : outcome.result === 'sunk'
-          ? `${shipName(outcome.ship!.size)} противника потоплен. Стреляйте снова!`
-          : 'Попадание! Стреляйте снова.',
+          ? { key: 'msg.enemySunk', params: { size: outcome.ship!.size } }
+          : { key: 'msg.hit' },
     );
 
     if (isFleetDestroyed(outcome.board)) {
@@ -275,16 +286,16 @@ export class GameStore {
     }
   }
 
-  /** Ход противника: он бьёт, пока попадает. */
+  /** The opponent's move: it keeps firing for as long as it keeps hitting. */
   private enemyVolley(): void {
     const era = this.era;
     const board = this.player();
     const cell = chooseShot(board.shots, afloatSizes(board), this.difficulty(), this.rng);
     if (cell === -1) {
-      // недостижимо при живом флоте, но ход обязан вернуться игроку в любом случае
+      // unreachable while a fleet is alive, but the turn has to come back either way
       this.turn.set('player');
       this.busy.set(false);
-      this.message.set('Противнику некуда стрелять. Ваш ход.');
+      this.message.set({ key: 'msg.enemyStuck' });
       return;
     }
 
@@ -300,8 +311,8 @@ export class GameStore {
     if (outcome.result !== 'miss') {
       this.message.set(
         outcome.result === 'sunk'
-          ? `${coordLabel(cell)} — ваш ${shipName(outcome.ship!.size).toLowerCase()} потоплен`
-          : `${coordLabel(cell)} — попадание в ваш корабль`,
+          ? { key: 'msg.yourShipSunk', params: { cell, size: outcome.ship!.size } }
+          : { key: 'msg.yourShipHit', params: { cell } },
       );
     }
 
@@ -314,7 +325,7 @@ export class GameStore {
       this.after(PAUSE.turnBack, era, () => {
         this.turn.set('player');
         this.busy.set(false);
-        this.message.set(`Противник бьёт в ${coordLabel(cell)} — мимо. Ваш ход.`);
+        this.message.set({ key: 'msg.enemyMiss', params: { cell } });
       });
     } else {
       this.after(PAUSE.enemyVolley, era, () => this.enemyVolley());
@@ -325,9 +336,7 @@ export class GameStore {
     this.phase.set('over');
     this.winner.set(winner);
     this.busy.set(false);
-    this.message.set(
-      winner === 'player' ? 'Эскадра противника уничтожена' : 'Ваш флот лежит на дне',
-    );
+    this.message.set({ key: winner === 'player' ? 'msg.won' : 'msg.lost' });
     if (winner === 'player') this.audio.victory();
     else this.audio.defeat();
     this.after(PAUSE.beforeVerdict, this.era, () => {
@@ -357,16 +366,16 @@ export class GameStore {
     this.pickedSize.set(4);
     this.orient.set('h');
     this.hover.set(null);
-    this.message.set('Расставьте флот в своих водах');
+    this.message.set({ key: 'msg.deploy' });
   }
 
-  /** Пересдача: та же расстановка противника уже не годится — новый бой. */
+  /** A rematch: the opponent's old deployment will not do — a fresh battle. */
   rematch(): void {
     this.newGame();
     this.autoPlace();
   }
 
-  /* ── служебное ──────────────────────────────────────────────────────── */
+  /* ── housekeeping ───────────────────────────────────────────────────── */
 
   private autoPickNext(): void {
     const next = this.roster().find((r) => r.left > 0);
@@ -377,9 +386,9 @@ export class GameStore {
     const entry: LogEntry = {
       id: this.logSeq++,
       side,
-      cell: coordLabel(cell),
+      cell,
       result,
-      ship: size !== null ? shipName(size) : null,
+      shipSize: size,
     };
     this.log.update((l) => [entry, ...l].slice(0, 60));
   }

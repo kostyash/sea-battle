@@ -1,4 +1,4 @@
-/* ── Морской бой ── design tokens & global chrome ──────────────────────────
+/* ── Sea Battle ── design tokens & global chrome ───────────────────────────
    Two materials: unsurveyed water (abyss) and charted water (paper).
    Everything else is instrument chrome in brass.
    ------------------------------------------------------------------------ */
@@ -28,14 +28,25 @@
 
   --paper-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
 
-  --display: 'Forum', 'Georgia', serif;
-  --label: 'PT Sans Narrow', 'Arial Narrow', sans-serif;
-  --data: 'IBM Plex Mono', ui-monospace, 'Consolas', monospace;
+  /* None of the three Latin faces carries Hebrew, so a Hebrew face sits behind
+     each of them: the browser falls back per glyph, and the Hebrew text picks it
+     up without the rest of the page changing typeface. */
+  --display: 'Forum', 'Frank Ruhl Libre', 'Georgia', serif;
+  --label: 'PT Sans Narrow', 'Heebo', 'Arial Narrow', sans-serif;
+  --data: 'IBM Plex Mono', 'Heebo', ui-monospace, 'Consolas', monospace;
 
   --rail: 1px solid rgba(201, 154, 62, 0.28);
   --shadow-deep: 0 24px 60px -24px rgba(0, 0, 0, 0.9);
 
+  /* +1 left-to-right, -1 right-to-left. Animations that slide text in from the
+     side it starts on multiply their offset by this instead of being written twice. */
+  --flip: 1;
+
   color-scheme: dark;
+}
+
+:root[dir='rtl'] {
+  --flip: -1;
 }
 
 *,
@@ -161,7 +172,7 @@ button {
   background: linear-gradient(180deg, #ecc670, #c1922f);
 }
 
-/* Пока флот не собран, кнопка не притворяется готовой к нажатию. */
+/* Until the fleet is complete the button does not pretend to be ready to press. */
 .btn--primary:disabled {
   opacity: 1;
   background: none;
@@ -179,6 +190,35 @@ button {
 .btn--ghost:hover:not(:disabled) {
   background: rgba(159, 217, 227, 0.08);
   border-color: rgba(159, 217, 227, 0.5);
+}
+
+/* ── right-to-left ─────────────────────────────────────────────────────── */
+
+/* The wide tracking that gives the Latin and Cyrillic labels their instrument
+   look only smears Hebrew letterforms, so it is dialled back for RTL. (The
+   `text-transform: uppercase` alongside it needs no undoing — Hebrew is unicase,
+   so it simply does nothing.) The rules are global on purpose: the classes live
+   inside components, and a component's own stylesheet cannot see the `dir` on
+   the document element. */
+:root[dir='rtl'] .eyebrow,
+:root[dir='rtl'] .btn,
+:root[dir='rtl'] .rail__turn,
+:root[dir='rtl'] .rail__link,
+:root[dir='rtl'] .sea__note,
+:root[dir='rtl'] .slot__name,
+:root[dir='rtl'] .slot__decks,
+:root[dir='rtl'] .level__name,
+:root[dir='rtl'] .launch,
+:root[dir='rtl'] .tally,
+:root[dir='rtl'] .who,
+:root[dir='rtl'] .log li.sunk .what,
+:root[dir='rtl'] .against,
+:root[dir='rtl'] .survey,
+:root[dir='rtl'] h1,
+:root[dir='rtl'] h2,
+:root[dir='rtl'] h3,
+:root[dir='rtl'] dt {
+  letter-spacing: 0.02em;
 }
 
 @media (prefers-reduced-motion: reduce) {

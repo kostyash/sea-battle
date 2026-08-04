@@ -53,7 +53,7 @@
   overflow: hidden;
 }
 
-/* ── бумага: свои воды нанесены на карту ───────────────────────────────── */
+/* ── paper: your own waters, charted ───────────────────────────────────── */
 
 :host(.is-chart) {
   --line: rgba(20, 56, 79, 0.22);
@@ -134,7 +134,7 @@
   opacity: 0.5;
 }
 
-/* ── пучина: чужие воды не нанесены никем ──────────────────────────────── */
+/* ── the abyss: foreign waters, charted by nobody ──────────────────────── */
 
 :host(.is-abyss) {
   --line: rgba(159, 217, 227, 0.1);
@@ -176,9 +176,9 @@
   }
 }
 
-/* ── клетки ────────────────────────────────────────────────────────────── */
+/* ── cells ─────────────────────────────────────────────────────────────── */
 
-/* ряд существует только для доступности — раскладку ведёт сетка .water */
+/* the row exists only for accessibility — the .water grid drives the layout */
 .row {
   display: contents;
 }
@@ -194,8 +194,8 @@
   transition: background-color 0.12s ease;
 }
 
-/* Клетка не `disabled`, а `aria-disabled`: отключённая кнопка теряет фокус,
-   и клавиатурный прицел улетал бы после каждого выстрела. */
+/* A cell is `aria-disabled`, never `disabled`: a disabled button loses focus,
+   and the keyboard aim would fly off after every shot. */
 .cell.inert {
   cursor: default;
 }
@@ -227,7 +227,7 @@
   display: block;
 }
 
-/* промах — след на воде */
+/* a miss — a trace left on the water */
 .mark::before {
   content: '';
   position: absolute;
@@ -248,7 +248,7 @@
   box-shadow: none;
 }
 
-/* попадание — перечёркнутая клетка */
+/* a hit — a crossed-out cell */
 .hit .mark,
 .sunk .mark {
   background:
@@ -289,7 +289,7 @@
   background-color: rgba(224, 71, 43, 0.14);
 }
 
-/* ── корабли ───────────────────────────────────────────────────────────── */
+/* ── ships ─────────────────────────────────────────────────────────────── */
 
 .hull,
 .ghost,
@@ -299,9 +299,10 @@
   pointer-events: none;
 }
 
-/* Никаких процентных отступов: процент считается от ШИРИНЫ, и на четырёхпалубном
-   он съедал бы высоту клетки, а silhouette с сохранением пропорций сжимался бы
-   тем сильнее, чем длиннее корабль. Поля у корпуса и так заложены во вьюбокс. */
+/* No percentage padding here: a percentage is computed from the WIDTH, so on a
+   four-decker it would eat into the height of the cell, and the silhouette, which
+   preserves its aspect ratio, would shrink the more the longer the ship. The hull's
+   own margins are built into the viewBox anyway. */
 .hull__glyph {
   position: absolute;
   top: 50%;
@@ -327,7 +328,7 @@
   opacity: 0.85;
 }
 
-/* подтверждённая разведка: потопленный корабль наносится на чужой квадрат */
+/* confirmed reconnaissance: a sunk ship is charted onto the foreign square */
 :host(.is-abyss) .hull {
   --glyph-fill: rgba(221, 211, 183, 0.07);
   --glyph-stroke: var(--chart-2);
@@ -337,7 +338,7 @@
   filter: drop-shadow(0 0 8px rgba(221, 211, 183, 0.25));
 }
 
-/* уцелевшие корабли, вскрытые после боя, — сведения задним числом, а не разведка */
+/* ships that survived, revealed after the battle — hindsight, not reconnaissance */
 :host(.is-abyss) .hull:not(.lost) {
   --glyph-fill: rgba(221, 211, 183, 0.03);
   --glyph-stroke: rgba(221, 211, 183, 0.36);
@@ -375,7 +376,7 @@
   background: rgba(224, 71, 43, 0.1);
 }
 
-/* ── всплеск ───────────────────────────────────────────────────────────── */
+/* ── the splash ────────────────────────────────────────────────────────── */
 
 .splash {
   z-index: 4;

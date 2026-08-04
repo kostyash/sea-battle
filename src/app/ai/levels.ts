@@ -1,19 +1,15 @@
-/** Уровни противника. Название и подсказка живут рядом с самим уровнем. */
+/**
+ * The opponent's levels.
+ *
+ * Only the identity of a level lives here. Its name and its one-line
+ * description are words, so they live in the dictionaries under
+ * `level.<id>.name` and `level.<id>.hint`.
+ */
 
-export type Difficulty = 'yunga' | 'michman' | 'admiral';
+export type Difficulty = 'cabin-boy' | 'midshipman' | 'admiral';
 
-export interface DifficultyInfo {
-  id: Difficulty;
-  name: string;
-  hint: string;
-}
+export const DIFFICULTIES: readonly Difficulty[] = ['cabin-boy', 'midshipman', 'admiral'];
 
-export const DIFFICULTIES: readonly DifficultyInfo[] = [
-  { id: 'yunga', name: 'Юнга', hint: 'Бьёт наугад, добивает не всегда' },
-  { id: 'michman', name: 'Мичман', hint: 'Ищет через клетку, добивает уверенно' },
-  { id: 'admiral', name: 'Адмирал', hint: 'Считает вероятности по всему полю' },
-];
-
-export function difficultyName(id: Difficulty): string {
-  return DIFFICULTIES.find((d) => d.id === id)?.name ?? 'Противник';
-}
+/** The translation keys a level answers to. */
+export const levelNameKey = (id: Difficulty) => `level.${id}.name` as const;
+export const levelHintKey = (id: Difficulty) => `level.${id}.hint` as const;

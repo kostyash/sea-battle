@@ -5,15 +5,22 @@
 }
 
 .deck {
+  /**
+   * Everything stacked above and below the charts: the masthead, the status
+   * rail, the section headings, the gaps and the padding. It is what the board
+   * cap below subtracts from the viewport height — see "one screen".
+   */
+  --deck-chrome: 19rem;
+
   max-width: 1640px;
   margin: 0 auto;
-  padding: clamp(1rem, 3vw, 2.2rem) clamp(0.8rem, 3vw, 2rem) 3rem;
+  padding: clamp(1rem, 3vw, 2.2rem) clamp(0.8rem, 3vw, 2rem) clamp(1rem, 3vh, 3rem);
   display: flex;
   flex-direction: column;
   gap: clamp(0.9rem, 2vw, 1.4rem);
 }
 
-/* ── шапка ─────────────────────────────────────────────────────────────── */
+/* ── the masthead ──────────────────────────────────────────────────────── */
 
 .masthead {
   display: flex;
@@ -31,10 +38,12 @@
 
 h1 {
   font-family: var(--display);
-  font-size: clamp(2rem, 7vw, 4.6rem);
+  /* Height matters as much as width here: on a wide but short window a title
+     sized off the width alone eats the room the charts need. */
+  font-size: clamp(1.7rem, min(7vw, 8dvh), 4.6rem);
   line-height: 0.9;
   letter-spacing: 0.12em;
-  /* на узком экране заголовок переносится, а не вылезает за поля */
+  /* on a narrow screen the title wraps instead of spilling past the margins */
   overflow-wrap: break-word;
   text-transform: uppercase;
   color: #f2ead6;
@@ -43,6 +52,8 @@ h1 {
 
 .chrome {
   display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   gap: 0.5rem;
 }
 
@@ -51,7 +62,7 @@ h1 {
   padding: 0.5em 0.85em;
 }
 
-/* ── латунная рейка со статусом ────────────────────────────────────────── */
+/* ── the brass status rail ─────────────────────────────────────────────── */
 
 .rail {
   display: flex;
@@ -61,7 +72,12 @@ h1 {
   margin: 0;
   padding: 0.6rem 0.95rem;
   background: linear-gradient(90deg, rgba(201, 154, 62, 0.16), rgba(201, 154, 62, 0.03) 60%, transparent);
-  border-left: 3px solid var(--brass);
+  border-inline-start: 3px solid var(--brass);
+}
+
+/* the glow has to start at the brass edge, and the brass edge has changed sides */
+:root[dir='rtl'] .rail {
+  background: linear-gradient(270deg, rgba(201, 154, 62, 0.16), rgba(201, 154, 62, 0.03) 60%, transparent);
 }
 
 .rail__turn {
@@ -104,7 +120,7 @@ h1 {
   border-bottom-color: var(--brass);
 }
 
-/* ── два моря и стойка приборов ────────────────────────────────────────── */
+/* ── the two seas and the instrument rack ──────────────────────────────── */
 
 .theatre {
   display: grid;
@@ -155,8 +171,8 @@ h1 {
   min-width: 0;
 }
 
-/* Во время расстановки работа идёт на своей карте — она идёт первой.
-   В бою первым нужен квадрат противника. */
+/* While deploying, the work happens on your own chart — so it comes first.
+   In battle it is the opponent's square you need first. */
 .sea--home {
   order: 2;
 }
@@ -190,7 +206,40 @@ h1 {
   }
 }
 
+/* ── one screen ─────────────────────────────────────────────────────────
+   Both charts and the instrument rack are meant to be taken in at a glance,
+   the way you would stand over a real chart table. A chart is square and
+   sized by its column, so on a wide but short window — a 1080p screen leaves
+   roughly 900 px once the browser's own chrome is gone — width alone pushes
+   the boards below the fold and the page starts scrolling.
+
+   So the board is bounded by whatever height is left over as well: it takes
+   the smaller of its column and the viewport minus `--deck-chrome`. When the
+   height is what binds, the chart stays square and simply gets narrower than
+   its column, and `margin-inline: auto` keeps it centred in the space.
+
+   Only from 1180 px, where the rack moves into a column of its own and the
+   two charts sit side by side; below that the page is expected to scroll. */
 @media (min-width: 1180px) {
+  .sea app-board-grid {
+    /* A definite width, not a max-width: `margin-inline: auto` cancels a flex
+       item's stretch, and with only a max-width the chart would fall back to
+       its intrinsic width — which, for a grid of absolutely positioned
+       overlays, is zero. */
+    width: min(100%, calc(100dvh - var(--deck-chrome)));
+    margin-inline: auto;
+  }
+
+  /* The rack carries no section heading, so it may stand that much taller than
+     a chart. Past that it scrolls inside itself rather than scrolling the page
+     — a page-level scrollbar would push the second chart out of sight. */
+  .rack {
+    max-height: calc(100dvh - var(--deck-chrome) + 2.9rem);
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(201, 154, 62, 0.4) transparent;
+  }
+
   .theatre {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(19rem, 22rem);
     align-items: start;

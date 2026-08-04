@@ -7,11 +7,11 @@ interface DeckBox {
   h: number;
 }
 
-const U = 20; // единиц вьюбокса на одну клетку
+const U = 20; // viewBox units per cell
 
 /**
- * Силуэт корабля, вычерченный по числу палуб: катер — точка,
- * линкор — четыре палубы с башнями. Носом вправо; вертикаль даёт поворот.
+ * A ship's silhouette, drawn from its number of decks: a patrol boat is a dot,
+ * a battleship four decks with turrets. Bow to the right; vertical is a rotation.
  */
 @Component({
   selector: 'app-ship-glyph',

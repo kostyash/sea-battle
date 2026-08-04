@@ -3,16 +3,16 @@ import { Ship, isSunk } from './fleet';
 import { aura } from './placement';
 
 /**
- * Разрешение выстрела.
+ * Resolving a shot.
  *
- * Потопленный корабль сам обводит себя промахами: раз корабли не соприкасаются,
- * все соседние клетки заведомо пусты, и держать игрока в неведении незачем.
+ * A sunk ship rings itself with misses: since ships never touch, every adjacent
+ * cell is known to be empty, and there is no point keeping the player in the dark.
  */
 
 export interface FireOutcome {
   board: Board;
   result: ShotResult;
-  /** Корабль, в который попали; при промахе — `null`. */
+  /** The ship that was hit; `null` on a miss. */
   ship: Ship | null;
 }
 
@@ -43,8 +43,8 @@ export function isFleetDestroyed(board: Board): boolean {
 }
 
 /**
- * Калибры, ещё держащиеся на плаву. Стреляющий знает их честно: потопление
- * объявляется вслух, так что список выводится из того же, что видит игрок.
+ * The ship sizes still afloat. The shooter learns them fairly: a sinking is
+ * announced out loud, so the list follows from what the player already sees.
  */
 export function afloatSizes(board: Board): number[] {
   return board.ships.filter((s) => !isSunk(s)).map((s) => s.size);

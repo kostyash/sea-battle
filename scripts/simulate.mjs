@@ -1,12 +1,13 @@
 #!/usr/bin/env node
 /**
- * Симуляция партий: гоняет три уровня противника по одинаковым расстановкам и
- * проверяет, что они выстраиваются по силе — Адмирал < Мичман < Юнга по числу
- * залпов до разгрома флота.
+ * Game simulation: runs the three opponent levels over identical deployments and
+ * checks that they line up by strength — Admiral < Midshipman < Cabin Boy by the
+ * number of salvos needed to destroy the fleet.
  *
- * Медленно (тысячи партий), поэтому живёт отдельной командой `npm run test:sim`,
- * а не в общем прогоне. Исходники домена и противника собираются esbuild-ом:
- * это тот же код, что и в приложении, без всякой подмены.
+ * It is slow (thousands of games), so it lives in a separate command,
+ * `npm run test:sim`, rather than in the general run. The domain and opponent
+ * sources are bundled with esbuild: this is the same code as in the application,
+ * with nothing substituted.
  */
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -52,14 +53,14 @@ try {
   });
 } catch (error) {
   console.error(error?.message ?? error);
-  fail('не удалось собрать симуляцию');
+  fail('failed to build the simulation');
 }
 
 const { randomBoard, seededRng, afloatSizes, fire, isFleetDestroyed, chooseShot } = await import(
   pathToFileURL(bundlePath).href
 );
 
-/** Одна партия: сколько залпов ушло на весь флот. */
+/** A single game: how many salvos the whole fleet took. */
 function shotsToWin(level, layoutSeed, aiSeed) {
   let board = randomBoard(seededRng(layoutSeed), 'player');
   const rng = seededRng(aiSeed);
@@ -67,22 +68,22 @@ function shotsToWin(level, layoutSeed, aiSeed) {
 
   while (!isFleetDestroyed(board)) {
     const cell = chooseShot(board.shots, afloatSizes(board), level, rng);
-    if (cell === -1) throw new Error('стрелять некуда, а флот жив');
-    if (board.shots[cell] !== 'unknown') throw new Error(`повторный выстрел в ${cell}`);
+    if (cell === -1) throw new Error('nowhere left to shoot, yet the fleet is alive');
+    if (board.shots[cell] !== 'unknown') throw new Error(`repeated shot at ${cell}`);
     board = fire(board, cell).board;
     shots++;
-    if (shots > 100) throw new Error('партия не сходится');
+    if (shots > 100) throw new Error('the game does not converge');
   }
   return shots;
 }
 
 const LEVELS = [
-  { id: 'yunga', name: 'Юнга' },
-  { id: 'michman', name: 'Мичман' },
-  { id: 'admiral', name: 'Адмирал' },
+  { id: 'cabin-boy', name: 'Cabin Boy' },
+  { id: 'midshipman', name: 'Midshipman' },
+  { id: 'admiral', name: 'Admiral' },
 ];
 
-console.log(`\n  Симуляция: ${GAMES} партий на уровень, одинаковые расстановки\n`);
+console.log(`\n  Simulation: ${GAMES} games per level, identical deployments\n`);
 
 const stats = new Map();
 try {
@@ -93,26 +94,28 @@ try {
     const mean = runs.reduce((s, x) => s + x, 0) / runs.length;
     stats.set(level.id, mean);
     console.log(
-      `  ${level.name.padEnd(8)} среднее ${mean.toFixed(2)}  ` +
-        `медиана ${runs[runs.length >> 1]}  лучшая ${runs[0]}  худшая ${runs[runs.length - 1]}`,
+      `  ${level.name.padEnd(11)} mean ${mean.toFixed(2)}  ` +
+        `median ${runs[runs.length >> 1]}  best ${runs[0]}  worst ${runs[runs.length - 1]}`,
     );
   }
 } catch (error) {
   console.error(error?.message ?? error);
-  fail('партия сломалась посреди симуляции');
+  fail('a game broke in the middle of the simulation');
 }
 
-const yunga = stats.get('yunga');
-const michman = stats.get('michman');
+const cabinBoy = stats.get('cabin-boy');
+const midshipman = stats.get('midshipman');
 const admiral = stats.get('admiral');
 
 console.log('');
-if (!(admiral < michman)) fail(`Адмирал (${admiral.toFixed(2)}) не лучше Мичмана (${michman.toFixed(2)})`);
-if (!(michman < yunga)) fail(`Мичман (${michman.toFixed(2)}) не лучше Юнги (${yunga.toFixed(2)})`);
+if (!(admiral < midshipman))
+  fail(`Admiral (${admiral.toFixed(2)}) is no better than Midshipman (${midshipman.toFixed(2)})`);
+if (!(midshipman < cabinBoy))
+  fail(`Midshipman (${midshipman.toFixed(2)}) is no better than Cabin Boy (${cabinBoy.toFixed(2)})`);
 
 console.log(
-  `  ✓ порядок силы соблюдён: Адмирал ${admiral.toFixed(2)} < ` +
-    `Мичман ${michman.toFixed(2)} < Юнга ${yunga.toFixed(2)}\n`,
+  `  ✓ the order of strength holds: Admiral ${admiral.toFixed(2)} < ` +
+    `Midshipman ${midshipman.toFixed(2)} < Cabin Boy ${cabinBoy.toFixed(2)}\n`,
 );
 
 cleanup();

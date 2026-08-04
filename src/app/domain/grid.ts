@@ -1,18 +1,17 @@
 /**
- * Квадрат 10×10 и адресация клеток.
+ * The 10×10 square and how cells are addressed.
  *
- * Клетка везде хранится одним числом 0…99 — так дешевле сравнивать и складывать
- * в множества. Строка и столбец выводятся из него, а не наоборот.
+ * A cell is stored everywhere as a single number 0…99 — cheaper to compare and
+ * to put into sets. Row and column are derived from it, not the other way round.
+ *
+ * How a cell is spelled out for a human — “B4” — is not here on purpose: the row
+ * letters belong to a language, and the rules do not have one. See `i18n/lang.ts`.
  */
 
 export const SIZE = 10;
 export const CELLS = SIZE * SIZE;
 
-/** Ряды подписываются кириллицей без Ё и Й — как на бумажном бланке. */
-export const ROW_LABELS = ['А', 'Б', 'В', 'Г', 'Д', 'Е', 'Ж', 'З', 'И', 'К'] as const;
-export const COL_LABELS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'] as const;
-
-/** Корабль лежит вдоль строки (`h`) или поперёк, вдоль столбца (`v`). */
+/** A ship lies along a row (`h`) or across, along a column (`v`). */
 export type Orientation = 'h' | 'v';
 
 export type Side = 'player' | 'enemy';
@@ -23,8 +22,3 @@ export const colOf = (cell: number): number => cell % SIZE;
 
 export const inBounds = (row: number, col: number): boolean =>
   row >= 0 && row < SIZE && col >= 0 && col < SIZE;
-
-/** «Б4» — так игрок диктует координату вслух. */
-export function coordLabel(cell: number): string {
-  return `${ROW_LABELS[rowOf(cell)]}${COL_LABELS[colOf(cell)]}`;
-}

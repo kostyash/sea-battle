@@ -1,31 +1,29 @@
 import { Orientation } from './grid';
 
 /**
- * Состав флота в русском морском бою: один линкор, два крейсера, три эсминца,
- * четыре катера. Десять вымпелов, двадцать палуб.
+ * The fleet roster of Russian-style sea battle: one battleship, two cruisers,
+ * three destroyers, four patrol boats. Ten pennants, twenty decks.
+ *
+ * A class is identified by its length alone. What that length is called is a
+ * matter of language and lives in `i18n` — the rules only ever count decks.
  */
 
 export interface ShipClass {
   size: number;
   count: number;
-  name: string;
 }
 
 export const FLEET_SPEC: readonly ShipClass[] = [
-  { size: 4, count: 1, name: 'Линкор' },
-  { size: 3, count: 2, name: 'Крейсер' },
-  { size: 2, count: 3, name: 'Эсминец' },
-  { size: 1, count: 4, name: 'Катер' },
+  { size: 4, count: 1 },
+  { size: 3, count: 2 },
+  { size: 2, count: 3 },
+  { size: 1, count: 4 },
 ];
 
 export const FLEET_SHIPS = FLEET_SPEC.reduce((n, s) => n + s.count, 0);
 export const TOTAL_DECKS = FLEET_SPEC.reduce((n, s) => n + s.count * s.size, 0);
 
-export function shipName(size: number): string {
-  return FLEET_SPEC.find((s) => s.size === size)?.name ?? 'Корабль';
-}
-
-/** Корабль, уже поставленный на поле. `cells` — его клетки в порядке от носа. */
+/** A ship already placed on the board. `cells` are its cells, bow first. */
 export interface Ship {
   id: number;
   size: number;

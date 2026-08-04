@@ -4,14 +4,15 @@ import { Orientation, SIZE, Side, colOf, idx, inBounds, rowOf } from './grid';
 import { Rng } from './rng';
 
 /**
- * Расстановка флота.
+ * Fleet deployment.
  *
- * Главное правило русского морского боя: корабли не соприкасаются — ни бортами,
- * ни углами. Отсюда всё остальное: и проверка легальности, и обводка потопленного
- * промахами, и то, почему противник может вычёркивать клетки вокруг находки.
+ * The main rule of Russian sea battle: ships never touch — neither side by side
+ * nor corner to corner. Everything else follows: the legality check, the ring of
+ * misses around a sunk ship, and why the opponent may cross out the cells around
+ * a find.
  */
 
-/** Клетки корабля от носа; пустой массив, если он не помещается в квадрат. */
+/** The ship's cells starting at the bow; empty array if it does not fit the square. */
 export function shipCells(row: number, col: number, size: number, orient: Orientation): number[] {
   const cells: number[] = [];
   for (let k = 0; k < size; k++) {
@@ -23,7 +24,7 @@ export function shipCells(row: number, col: number, size: number, orient: Orient
   return cells;
 }
 
-/** Те же клетки, но обрезанные по краю — для полупрозрачного силуэта под курсором. */
+/** The same cells, but clipped at the edge — for the translucent silhouette under the cursor. */
 export function clippedCells(
   row: number,
   col: number,
@@ -39,7 +40,7 @@ export function clippedCells(
   return cells;
 }
 
-/** Кольцо вокруг корабля, включая диагонали: там не может стоять ничего. */
+/** The ring around a ship, diagonals included: nothing may stand there. */
 export function aura(cells: readonly number[]): number[] {
   const own = new Set(cells);
   const ring = new Set<number>();
@@ -97,13 +98,13 @@ export function withoutShipAt(board: Board, cell: number): Board {
   return { ...board, ships: board.ships.filter((s) => s.id !== id), shipAt };
 }
 
-/** Все легальные постановки корабля данного калибра на текущем поле. */
+/** Every legal placement of a ship of the given size on the current board. */
 export function legalSpots(board: Board, size: number): Array<[number, number, Orientation]> {
   const spots: Array<[number, number, Orientation]> = [];
   for (let r = 0; r < SIZE; r++) {
     for (let c = 0; c < SIZE; c++) {
       if (canPlace(board, r, c, size, 'h')) spots.push([r, c, 'h']);
-      // однопалубный вертикально — тот же самый корабль, второй раз его не предлагаем
+      // a single-deck ship placed vertically is the same ship — don't offer it twice
       if (size > 1 && canPlace(board, r, c, size, 'v')) spots.push([r, c, 'v']);
     }
   }
@@ -111,12 +112,13 @@ export function legalSpots(board: Board, size: number): Array<[number, number, O
 }
 
 /**
- * Случайная, но всегда легальная расстановка: крупные корабли ставятся первыми,
- * иначе мелочь дробит поле и линкору не остаётся прямой.
+ * A random but always legal deployment: the big ships go down first, otherwise
+ * the small fry fragments the board and the battleship has no straight run left.
  *
- * `attempts` — сколько раз перекладывать флот, если жребий загнал себя в тупик.
- * На пустом поле 10×10 при постановке от крупного к мелкому тупик практически
- * недостижим, но запас нужен, а с нулём запаса видно, что делает запасной путь.
+ * `attempts` — how many times to lay the fleet out again if the random draw
+ * paints itself into a corner. On an empty 10×10 board, going from big to small,
+ * a dead end is all but unreachable, yet the headroom is needed — and with zero
+ * headroom you get to see what the fallback path does.
  */
 export function randomBoard(rng: Rng, owner: Side, attempts = 300): Board {
   attempt: for (let tries = 0; tries < attempts; tries++) {
@@ -135,8 +137,8 @@ export function randomBoard(rng: Rng, owner: Side, attempts = 300): Board {
 }
 
 /**
- * Запасная расстановка на случай, если жребий 300 раз загонит себя в тупик.
- * Пустая доска здесь не годится: флот из нуля кораблей нельзя потопить.
+ * The fallback deployment, in case the random draw hits a dead end 300 times.
+ * An empty board will not do here: a fleet of zero ships can never be sunk.
  */
 const CANONICAL: ReadonlyArray<[number, number, number, Orientation]> = [
   [0, 0, 4, 'h'],

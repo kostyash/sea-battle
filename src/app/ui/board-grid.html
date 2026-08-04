@@ -1,4 +1,8 @@
-<div class="frame">
+<!-- The chart itself stays left-to-right in every language. Its overlays — hulls,
+     the silhouette, the splashes — are positioned by `left: %` from cell 0, and the
+     arrow keys walk the same index order; mirroring the square would break both,
+     and a squared paper chart has no reading direction to respect anyway. -->
+<div class="frame" dir="ltr">
   <div class="corner" aria-hidden="true"></div>
 
   <div class="gutter gutter--cols" aria-hidden="true">
@@ -8,7 +12,7 @@
   </div>
 
   <div class="gutter gutter--rows" aria-hidden="true">
-    @for (r of rows; track r; let i = $index) {
+    @for (r of rows(); track $index; let i = $index) {
       <span [class.lit]="crosshair()?.row === i">{{ r }}</span>
     }
   </div>

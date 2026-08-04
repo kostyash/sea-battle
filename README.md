@@ -1,65 +1,92 @@
-# Морской бой
+# Sea Battle
 
-Классический морской бой против компьютера. Angular 22, standalone-компоненты,
-сигналы, zoneless change detection, никаких сторонних зависимостей.
+Classic sea battle against the computer. Angular 22, standalone components,
+signals, zoneless change detection, no third-party dependencies.
 
 ```bash
 npm start          # http://localhost:4200
-npm run build      # прод-сборка, ~55 kB gzip
+npm run build      # production build, ~55 kB gzip
 ```
 
-## Правила
+## Rules
 
-Поле 10×10, ряды А…К, столбцы 1…10. Флот: линкор (4 палубы), два крейсера (3),
-три эсминца (2), четыре катера (1) — всего 10 кораблей и 20 палуб.
+A 10×10 field, rows A…J, columns 1…10. The fleet: one battleship (4 decks), two
+cruisers (3), three destroyers (2), four patrol boats (1) — ten ships and twenty
+decks in all.
 
-- Корабли не соприкасаются даже углами.
-- Попал — стреляешь снова. Промахнулся — ход переходит.
-- Потопленный корабль сам обводит вокруг себя промахи: там кораблей быть не может.
+- Ships never touch, not even at the corners.
+- Hit — you fire again. Miss — the turn passes.
+- A sunk ship rings itself with misses: there can be no ships there.
 
-## Расстановка
+## Deployment
 
-Выберите корабль в составе флота, наведите на свою карту, щёлкните.
-`R` или правая кнопка поворачивает, щелчок по стоящему кораблю снимает его.
-Кнопка «По жребию» расставляет весь флот сразу.
+Pick a ship from the fleet roster, hover over your own chart, click.
+`R` or the right mouse button rotates it; clicking a ship already on the board takes it back off.
+The random-draw button deploys the whole fleet at once.
 
-Стрелки водят прицел по клеткам, `Enter` стреляет.
+The arrow keys walk the crosshair across the cells, `Enter` fires.
 
-## Противник
+## Opponent
 
-| Уровень | Как думает |
+| Level | How it thinks |
 | --- | --- |
-| Юнга | Бьёт наугад, добивает раненого примерно в половине случаев |
-| Мичман | Ищет через клетку, добивание продолжает найденную линию |
-| Адмирал | Строит карту плотности: перебирает все расстановки уцелевших калибров, совместимые с отметками на поле, и бьёт в самую вероятную клетку |
+| Cabin Boy | Fires blind, finishes off a wounded ship about half the time |
+| Midshipman | Searches every other cell; when finishing off, follows the line it has found |
+| Admiral | Builds a density map: enumerates every deployment of the surviving calibres compatible with the marks on the field, and fires at the most likely cell |
 
-Противник видит только то же, что и вы: сетку отметок и список ещё не потопленных
-калибров. В чужую расстановку он не заглядывает — см. `chooseShot` в
-`src/app/core/ai.ts`, туда передаётся лишь `shots` и размеры уцелевших кораблей.
+The opponent sees only what you see: the grid of marks and the list of ship sizes
+not yet sunk. It never peeks at your deployment — see `chooseShot` in
+`src/app/ai/opponent.ts`, which is passed only `shots` and the sizes of the surviving ships.
 
-## Как это устроено
+## Languages
+
+English, Russian and Hebrew, switched at runtime from the button in the masthead;
+the choice is remembered in `localStorage`. Hebrew flips the page to `dir="rtl"`.
+
+The board itself deliberately stays left-to-right in every language: its hulls,
+silhouettes and splashes are positioned by `left: %` from cell 0, and the arrow
+keys walk the same index order — mirroring the square would break both, and a
+squared paper chart has no reading direction to respect.
+
+Row letters follow the language: A…J, А…К, א…י. Because of that they are not part
+of the rules — `src/app/domain` only ever knows a cell as a number 0…99, and the
+store keeps its status line and its firing log as keys plus data rather than as
+finished sentences, so switching language mid-battle re-reads what has happened
+so far instead of stranding it in the old one.
+
+## How it is put together
 
 ```
-src/app/core/     models.ts    типы, состав флота, координаты
-                  board.ts     чистые правила: расстановка, выстрел, обвод потопленного
-                  ai.ts        три уровня противника
-                  game-store.ts  сигнальное состояние партии и порядок ходов
-                  audio.ts     весь звук синтезируется на WebAudio, ни одного файла
-src/app/ui/       board-grid   квадрат 10×10 в двух материалах
-                  ship-glyph   силуэт корабля, вычерченный по числу палуб
-                  deploy-panel, battle-panel, result-overlay
+src/app/domain/   grid.ts      the 10×10 square and cell addressing
+                  fleet.ts     the fleet roster and a placed ship
+                  placement.ts deployment: legality, the ring with its diagonals
+                  shot.ts      resolving a shot, ringing a sunk ship
+                  rng.ts       seeded randomness behind an Rng interface
+src/app/ai/       levels.ts    the three level ids
+                  opponent.ts  Cabin Boy and Midshipman
+                  density.ts   the Admiral's density map
+src/app/i18n/     en.ts, ru.ts, he.ts   the dictionaries; English defines the keys
+                  lang.ts      languages, direction, row letters
+                  i18n.ts      the service: t(), plurals, coord(), lang and dir
+src/app/core/     game-store.ts  signal state of the game and the turn order
+                  audio.ts     all sound is synthesised on WebAudio, not a single file
+src/app/ui/       board-grid   a 10×10 square in two materials
+                  ship-glyph   ship silhouette drawn from the number of decks
+                  deploy-panel, battle-panel, result-overlay, lang-switch
 ```
 
-Логика боя лежит в чистых функциях `board.ts` — состояние доски всегда заменяется
-целиком, поэтому сигналы и `OnPush` работают без дополнительных ухищрений.
+The battle logic lives in the pure functions of `src/app/domain` — the board state
+is always replaced wholesale, so signals and `OnPush` work without extra contrivances.
 
-## Оформление
+## Look and feel
 
-Свои воды нанесены на карту: бумага, прусская тушь, промеры глубин, картушка
-компаса. Чужой квадрат не обследован никем — чёрная вода под лучом гидролокатора.
-Потопленный корабль противника наносится на эту черноту тушью: подтверждённые
-сведения ложатся на карту. После боя квадрат дочерчивается целиком — видно, где
-прятались корабли, которые вы так и не нашли.
+Your own waters are drawn on a chart: paper, Prussian ink, depth soundings, a
+compass rose. The enemy square has been surveyed by no one — black water under
+the sonar beam. A sunk enemy ship is inked onto that blackness: confirmed
+intelligence goes on the chart. After the battle the square is drawn in
+completely — you can see where the ships you never found were hiding.
 
-Шрифты: Forum (заголовки), PT Sans Narrow (подписи), IBM Plex Mono (координаты и
-журнал). Анимации выключаются при `prefers-reduced-motion`.
+Fonts: Forum (headings), PT Sans Narrow (labels), IBM Plex Mono (coordinates and
+the log). None of the three carries Hebrew, so Frank Ruhl Libre and Heebo sit
+behind them and the browser falls back per glyph. Animations switch off under
+`prefers-reduced-motion`.

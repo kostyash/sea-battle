@@ -3,17 +3,19 @@ import { CELLS, SIZE, colOf, idx, inBounds, rowOf } from '../domain/grid';
 import { Rng } from '../domain/rng';
 
 /**
- * Адмирал: карта плотности.
+ * Admiral: the density map.
  *
- * Для каждого уцелевшего калибра перебираются все его постановки, совместимые с
- * отметками на поле, и каждая клетка набирает вес по числу проходящих через неё
- * расстановок. Бить надо туда, где кораблю негде спрятаться.
+ * For every ship size still afloat we enumerate all of its placements that are
+ * consistent with the marks on the board, and each cell accumulates weight from
+ * the number of placements passing through it. Shoot where a ship has nowhere to
+ * hide.
  *
- * Добивание отдельным режимом не нужно: постановка, накрывающая раненую клетку,
- * получает вес на порядок выше, и максимум сам уезжает к недобитому кораблю.
+ * Finishing off a wounded ship needs no separate mode: a placement covering an
+ * open hit gets a weight an order of magnitude higher, so the maximum drifts to
+ * the wounded ship on its own.
  */
 
-/** Во сколько раз ценнее постановка за каждую накрытую раненую клетку. */
+/** How many times more valuable a placement becomes per open hit it covers. */
 const WOUND_WEIGHT = 24;
 
 export function densityMap(
@@ -23,11 +25,11 @@ export function densityMap(
   const wounded = shots.some((s) => s === 'hit');
   const score = new Array<number>(CELLS).fill(0);
 
-  const byCalibre = new Map<number, number>();
-  for (const size of afloat) byCalibre.set(size, (byCalibre.get(size) ?? 0) + 1);
+  const bySize = new Map<number, number>();
+  for (const size of afloat) bySize.set(size, (bySize.get(size) ?? 0) + 1);
 
-  for (const [size, count] of byCalibre) {
-    // однопалубный «вертикально» — тот же самый корабль, второй раз не считаем
+  for (const [size, count] of bySize) {
+    // a single-deck ship placed "vertically" is the same ship — don't count it twice
     const orients: ReadonlyArray<readonly [number, number]> =
       size === 1 ? [[0, 1]] : [
         [0, 1],
@@ -44,7 +46,7 @@ export function densityMap(
           for (let k = 0; k < size; k++) span.push(idx(r + dr * k, c + dc * k));
 
           if (span.some((i) => shots[i] === 'miss' || shots[i] === 'sunk')) continue;
-          // корабли не соприкасаются: встать вплотную к чужой ране нельзя
+          // ships never touch: it cannot sit flush against another ship's open hit
           if (touchesForeignHit(shots, span)) continue;
 
           const covered = span.filter((i) => shots[i] === 'hit').length;
@@ -61,8 +63,8 @@ export function densityMap(
 }
 
 /**
- * Клетка с наибольшей плотностью, либо -1, если ни одна расстановка не сошлась
- * (тогда решает вызывающий — падать в мичманский поиск).
+ * The cell with the highest density, or -1 if no placement fit at all
+ * (then it is up to the caller — fall back to the Midshipman search).
  */
 export function densityShot(
   shots: readonly CellState[],
@@ -87,7 +89,7 @@ export function densityShot(
   return ties.length ? rng.pick(ties) : -1;
 }
 
-/** Есть ли рядом с предполагаемым корпусом раненая клетка, которую он не покрывает. */
+/** Whether an open hit the candidate hull does not cover sits next to it. */
 export function touchesForeignHit(shots: readonly CellState[], span: readonly number[]): boolean {
   const own = new Set(span);
   for (const c of span) {

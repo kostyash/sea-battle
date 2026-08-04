@@ -4,6 +4,7 @@ import {
   ElementRef,
   computed,
   effect,
+  inject,
   input,
   output,
   signal,
@@ -11,9 +12,11 @@ import {
 } from '@angular/core';
 import { isSunk } from '../domain/fleet';
 import { Ship } from '../domain/fleet';
-import { CELLS, COL_LABELS, ROW_LABELS, SIZE, coordLabel, colOf, rowOf } from '../domain/grid';
+import { CELLS, SIZE, colOf, rowOf } from '../domain/grid';
 import { Board } from '../domain/board';
 import { Splash } from '../core/game-store';
+import { I18n } from '../i18n/i18n';
+import { MsgKey } from '../i18n/en';
 import { ShipGlyph } from './ship-glyph';
 
 export interface Ghost {
@@ -23,14 +26,14 @@ export interface Ghost {
   orient: 'h' | 'v';
 }
 
-const STATE_WORD: Record<string, string> = {
-  unknown: 'не пристреляна',
-  miss: 'мимо',
-  hit: 'попадание',
-  sunk: 'потоплен',
+const STATE_KEY: Record<string, MsgKey> = {
+  unknown: 'cell.unknown',
+  miss: 'cell.miss',
+  hit: 'cell.hit',
+  sunk: 'cell.sunk',
 };
 
-/** Промеры глубин на бумаге — ровно столько, чтобы карта выглядела рабочей. */
+/** Depth soundings on the paper — just enough of them to make the chart look worked. */
 const SOUNDINGS = [
   [8, 14, 42], [26, 31, 27], [47, 12, 55], [63, 44, 18], [12, 68, 36],
   [72, 22, 61], [35, 78, 24], [88, 57, 47], [55, 88, 33], [18, 45, 52],
@@ -49,13 +52,15 @@ const SOUNDINGS = [
   },
 })
 export class BoardGrid {
+  protected readonly i18n = inject(I18n);
+
   readonly board = input.required<Board>();
   readonly variant = input.required<'chart' | 'abyss'>();
   readonly interactive = input(false);
   readonly ghost = input<Ghost | null>(null);
   readonly splash = input<Splash | null>(null);
   readonly caption = input('');
-  /** По окончании боя чужой квадрат наносится на карту целиком. */
+  /** Once the battle is over the opponent's square is charted in full. */
   readonly surveyed = input(false);
 
   readonly cellEnter = output<number>();
@@ -65,19 +70,19 @@ export class BoardGrid {
 
   private readonly cellRefs = viewChildren<ElementRef<HTMLButtonElement>>('cellRef');
 
-  /** Клетки сгруппированы по рядам ради разметки role="row"; сетку это не ломает. */
+  /** Cells are grouped into rows for the role="row" markup; the grid survives it. */
   protected readonly gridRows = Array.from({ length: SIZE }, (_, r) =>
     Array.from({ length: SIZE }, (_, c) => r * SIZE + c),
   );
-  protected readonly rows = ROW_LABELS;
-  protected readonly cols = COL_LABELS;
+  protected readonly rows = this.i18n.rowLabels;
+  protected readonly cols = this.i18n.colLabels;
   protected readonly soundings = SOUNDINGS;
 
   protected readonly focusIdx = signal(0);
   protected readonly hoverIdx = signal<number | null>(null);
   private wantsFocus = false;
 
-  /** На своей карте виден весь флот; в чужих водах — только то, что подтверждено потоплением. */
+  /** Your own chart shows the whole fleet; in foreign waters, only what sinking confirmed. */
   protected readonly hulls = computed<Ship[]>(() => {
     const ships = this.board().ships;
     if (this.variant() === 'chart' || this.surveyed()) return ships;
@@ -92,7 +97,7 @@ export class BoardGrid {
     return { row: rowOf(h), col: colOf(h) };
   });
 
-  /** Всплеск живёт в списке, чтобы каждый новый выстрел пересоздавал анимацию. */
+  /** The splash lives in a list so that every new shot recreates the animation. */
   protected readonly splashes = computed(() => {
     const s = this.splash();
     return s ? [s] : [];
@@ -112,16 +117,16 @@ export class BoardGrid {
   }
 
   protected label(i: number): string {
-    return `${coordLabel(i)} — ${STATE_WORD[this.state(i)]}`;
+    return this.i18n.t('cell.label', { cell: i, text: this.i18n.t(STATE_KEY[this.state(i)]) });
   }
 
   /**
-   * Накладки лежат поверх сетки в абсолютных координатах: если раздавать им
-   * grid-row/grid-column, автоматическая раскладка сдвигает сами клетки.
+   * The overlays sit on top of the grid in absolute coordinates: hand them
+   * grid-row/grid-column instead and the auto layout shifts the cells themselves.
    */
   protected shipStyle(ship: Ship, i: number): Record<string, string> {
     const box = patch(ship.row, ship.col, ship.size, ship.orient);
-    // финальная съёмка квадрата ложится на бумагу по очереди, корабль за кораблём
+    // the final survey of the square settles onto the paper in turn, ship after ship
     return this.surveyed() ? { ...box, 'animation-delay': `${i * 80}ms` } : box;
   }
 
@@ -168,15 +173,15 @@ export class BoardGrid {
     this.cellLeave.emit();
   }
 
-  /** Фокус ушёл из сетки — гасим перекрестье, иначе оно горит без прицела. */
+  /** Focus left the grid — put out the crosshair, or it burns with nothing aimed. */
   protected onBlur(): void {
     this.hoverIdx.set(null);
   }
 
   /**
-   * Клетки не помечаются `disabled`: браузер снимает фокус с отключённой кнопки,
-   * и после каждого выстрела клавиатурный прицел улетал на body. Вместо этого
-   * клетка остаётся фокусируемой, а действие гасится здесь.
+   * Cells are never marked `disabled`: the browser pulls focus off a disabled
+   * button, and after every shot the keyboard aim flew off to the body. Instead
+   * the cell stays focusable and the action is smothered here.
    */
   protected onPick(i: number): void {
     if (!this.interactive()) return;
@@ -190,8 +195,8 @@ export class BoardGrid {
   }
 
   /**
-   * Стрелки обрабатываются на сетке, а не на клетке: фокус переезжает
-   * асинхронно, и быстрые нажатия иначе теряются.
+   * Arrows are handled on the grid rather than on a cell: focus moves
+   * asynchronously, and fast keypresses would otherwise be lost.
    */
   protected onKey(event: KeyboardEvent): void {
     if (!this.interactive()) return;
@@ -222,7 +227,7 @@ export class BoardGrid {
   }
 }
 
-/** Прямоугольник на N клеток в процентах от квадрата 10×10. */
+/** A rectangle N cells long, in percentages of the 10×10 square. */
 function patch(row: number, col: number, size: number, orient: 'h' | 'v'): Record<string, string> {
   return {
     left: `${col * 10}%`,

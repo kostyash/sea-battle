@@ -7,15 +7,15 @@ const take = (seed: number, n: number): number[] => {
 };
 
 describe('seededRng', () => {
-  it('одно зерно — одна и та же последовательность', () => {
+  it('one seed — one and the same sequence', () => {
     expect(take(12345, 20)).toEqual(take(12345, 20));
   });
 
-  it('разные зёрна расходятся', () => {
+  it('different seeds diverge', () => {
     expect(take(1, 20)).not.toEqual(take(2, 20));
   });
 
-  it('next() не выходит из [0, 1)', () => {
+  it('next() never leaves [0, 1)', () => {
     const rng = seededRng(7);
     for (let i = 0; i < 5000; i++) {
       const v = rng.next();
@@ -24,7 +24,7 @@ describe('seededRng', () => {
     }
   });
 
-  it('распределение не вырождено: обе половины отрезка заселены', () => {
+  it('the distribution is not degenerate: both halves of the interval are populated', () => {
     const rng = seededRng(99);
     let low = 0;
     for (let i = 0; i < 4000; i++) if (rng.next() < 0.5) low++;
@@ -32,12 +32,12 @@ describe('seededRng', () => {
     expect(low).toBeLessThan(2300);
   });
 
-  it('отрицательное зерно приводится к беззнаковому и работает', () => {
+  it('a negative seed is coerced to unsigned and still works', () => {
     expect(take(-5, 10)).toEqual(take(-5 >>> 0, 10));
   });
 
   describe('int()', () => {
-    it('держится в [0, bound) и покрывает все значения', () => {
+    it('keeps to [0, bound) and covers every value', () => {
       const rng = seededRng(2024);
       const seen = new Set<number>();
       for (let i = 0; i < 3000; i++) {
@@ -50,54 +50,54 @@ describe('seededRng', () => {
       expect(seen.size).toBe(10);
     });
 
-    it('bound = 1 всегда даёт 0', () => {
+    it('bound = 1 always gives 0', () => {
       const rng = seededRng(3);
       expect([rng.int(1), rng.int(1), rng.int(1)]).toEqual([0, 0, 0]);
     });
 
-    it('bound = 0 и отрицательный дают 0 и не трогают состояние', () => {
+    it('bound = 0 and a negative bound give 0 and leave the state alone', () => {
       const rng = seededRng(42);
       expect(rng.int(0)).toBe(0);
       expect(rng.int(-3)).toBe(0);
-      // состояние не сдвинулось: следующий next() совпадает с первым у чистого генератора
+      // the state has not moved: the next next() matches the first one of a fresh generator
       expect(rng.next()).toBe(seededRng(42).next());
     });
   });
 
   describe('pick()', () => {
-    it('возвращает элемент списка', () => {
+    it('returns an element of the list', () => {
       const rng = seededRng(11);
-      const items = ['а', 'б', 'в', 'г'] as const;
+      const items = ['a', 'b', 'c', 'd'] as const;
       for (let i = 0; i < 200; i++) expect(items).toContain(rng.pick(items));
     });
 
-    it('со временем достаёт каждый элемент', () => {
+    it('given time, it draws every element', () => {
       const rng = seededRng(555);
       const items = [1, 2, 3];
       const seen = new Set(Array.from({ length: 300 }, () => rng.pick(items)));
       expect([...seen].sort()).toEqual([1, 2, 3]);
     });
 
-    it('из списка на один элемент возвращает его же', () => {
-      expect(seededRng(1).pick(['единственный'])).toBe('единственный');
+    it('from a one-element list it returns that very element', () => {
+      expect(seededRng(1).pick(['the only one'])).toBe('the only one');
     });
 
-    it('на пустом списке падает внятно', () => {
+    it('on an empty list it fails loudly and clearly', () => {
       expect(() => seededRng(1).pick([])).toThrow(RangeError);
-      expect(() => seededRng(1).pick([])).toThrow(/пустой список/);
+      expect(() => seededRng(1).pick([])).toThrow(/empty list/);
     });
   });
 });
 
 describe('entropySeed', () => {
-  it('даёт беззнаковое 32-битное целое', () => {
+  it('gives an unsigned 32-bit integer', () => {
     const seed = entropySeed();
     expect(Number.isInteger(seed)).toBe(true);
     expect(seed).toBeGreaterThanOrEqual(0);
     expect(seed).toBeLessThanOrEqual(0xffffffff);
   });
 
-  it('два вызова почти наверняка различаются', () => {
+  it('two calls almost certainly differ', () => {
     const seeds = new Set(Array.from({ length: 50 }, () => entropySeed()));
     expect(seeds.size).toBeGreaterThan(45);
   });

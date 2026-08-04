@@ -8,7 +8,8 @@ import {
   viewChild,
 } from '@angular/core';
 import { GameStore } from '../core/game-store';
-import { difficultyName } from '../ai/levels';
+import { levelNameKey } from '../ai/levels';
+import { I18n } from '../i18n/i18n';
 
 @Component({
   selector: 'app-result-overlay',
@@ -17,26 +18,30 @@ import { difficultyName } from '../ai/levels';
   template: `
     <div class="scrim" role="dialog" aria-modal="true" aria-labelledby="verdict">
       <div #card class="cartouche" [class.won]="won()" tabindex="-1">
-        <p class="eyebrow">{{ won() ? 'Квадрат зачищен' : 'Квадрат потерян' }}</p>
-        <h2 id="verdict">{{ won() ? 'Победа' : 'Поражение' }}</h2>
-        <p class="line">{{ store.message() }}</p>
+        <p class="eyebrow">{{ i18n.t(won() ? 'result.wonEyebrow' : 'result.lostEyebrow') }}</p>
+        <h2 id="verdict">{{ i18n.t(won() ? 'result.won' : 'result.lost') }}</h2>
+        <p class="line">{{ store.messageText() }}</p>
 
         <dl class="figures">
-          <div><dt>Залпов</dt><dd>{{ store.playerStats().shots }}</dd></div>
-          <div><dt>Точность</dt><dd>{{ store.playerStats().accuracy }}%</dd></div>
-          <div><dt>Потоплено</dt><dd>{{ store.enemyLosses() }}<i>/10</i></dd></div>
-          <div><dt>Потеряно</dt><dd>{{ store.playerLosses() }}<i>/10</i></dd></div>
+          <div><dt>{{ i18n.t('stats.shots') }}</dt><dd>{{ store.playerStats().shots }}</dd></div>
+          <div><dt>{{ i18n.t('stats.accuracy') }}</dt><dd>{{ store.playerStats().accuracy }}%</dd></div>
+          <div><dt>{{ i18n.t('stats.sunk') }}</dt><dd>{{ store.enemyLosses() }}<i>/10</i></dd></div>
+          <div><dt>{{ i18n.t('stats.lost') }}</dt><dd>{{ store.playerLosses() }}<i>/10</i></dd></div>
         </dl>
 
-        <p class="against">Противник — {{ levelName() }}</p>
+        <p class="against">{{ i18n.t('result.against', { text: levelName() }) }}</p>
 
         <div class="actions">
-          <button type="button" class="btn btn--primary" (click)="store.rematch()">Ещё бой</button>
-          <button type="button" class="btn btn--ghost" (click)="store.newGame()">Расставить заново</button>
+          <button type="button" class="btn btn--primary" (click)="store.rematch()">
+            {{ i18n.t('action.rematch') }}
+          </button>
+          <button type="button" class="btn btn--ghost" (click)="store.newGame()">
+            {{ i18n.t('action.redeploy') }}
+          </button>
         </div>
 
         <button type="button" class="survey" (click)="store.closeVerdict()">
-          Осмотреть квадрат противника
+          {{ i18n.t('action.survey') }}
         </button>
       </div>
     </div>
@@ -73,8 +78,7 @@ import { difficultyName } from '../ai/levels';
     .cartouche::after {
       content: '';
       position: absolute;
-      left: 1.6rem;
-      right: 1.6rem;
+      inset-inline: 1.6rem;
       height: 1px;
       background: linear-gradient(90deg, transparent, var(--brass), transparent);
       opacity: 0.55;
@@ -179,18 +183,20 @@ import { difficultyName } from '../ai/levels';
 })
 export class ResultOverlay {
   protected readonly store = inject(GameStore);
+  protected readonly i18n = inject(I18n);
   protected readonly won = computed(() => this.store.winner() === 'player');
-  protected readonly levelName = computed(() => difficultyName(this.store.difficulty()));
+  protected readonly levelName = computed(() => this.i18n.t(levelNameKey(this.store.difficulty())));
 
   private readonly card = viewChild.required<ElementRef<HTMLElement>>('card');
 
   constructor() {
-    // Карточка объявлена модальной — значит, фокус обязан в неё переехать,
-    // иначе Tab уводит в шапку, уже скрытую от скринридера через aria-modal.
+    // The card is declared modal — so focus is obliged to move into it, or Tab
+    // wanders off into the masthead, which `aria-modal` has already hidden from
+    // the screen reader.
     afterNextRender(() => this.card().nativeElement.focus());
   }
 
-  /** Escape убирает карточку так же, как «осмотреть квадрат». */
+  /** Escape dismisses the card exactly as "survey the square" does. */
   protected onEscape(): void {
     this.store.closeVerdict();
   }

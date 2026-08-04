@@ -1,12 +1,13 @@
 #!/usr/bin/env node
 /**
- * Обёртка над `ng test`.
+ * Wrapper around `ng test`.
  *
- * Нужна по двум причинам:
- *  - привычный для vitest флаг `--run` Angular CLI не понимает, а гонять тесты
- *    хочется командой `npm test -- --run`; здесь он превращается в `--watch=false`;
- *  - порог покрытия включается переменной окружения, чтобы обычный прогон тестов
- *    и ворота покрытия были разными командами (см. vitest.config.ts).
+ * It exists for two reasons:
+ *  - the Angular CLI does not understand `--run`, the flag everyone is used to from
+ *    vitest, yet we want to run tests as `npm test -- --run`; here it is turned into
+ *    `--watch=false`;
+ *  - the coverage threshold is switched on by an environment variable, so that a plain
+ *    test run and the coverage gate are two different commands (see vitest.config.ts).
  */
 import { spawn } from 'node:child_process';
 

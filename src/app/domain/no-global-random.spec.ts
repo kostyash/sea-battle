@@ -3,22 +3,22 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 /**
- * Домен и противник обязаны получать случайность через `Rng`. Один забытый
- * глобальный вызов ломает воспроизводимость партии молча, поэтому запрет
- * проверяется по исходникам, а не на словах.
+ * The domain and the opponent must draw their randomness through `Rng`. A single
+ * forgotten global call silently breaks the reproducibility of a game, so the ban
+ * is checked against the sources rather than taken on trust.
  */
 const FORBIDDEN = ['Math', 'random'].join('.');
 const ROOTS = ['src/app/domain', 'src/app/ai'];
 
-/** Упоминание в комментарии — не вызов; сравниваем только код. */
+/** A mention in a comment is not a call; we compare the code only. */
 function code(src: string): string {
   return src.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/(^|[^:])\/\/.*$/gm, '$1');
 }
 
 /**
- * Ошибку чтения намеренно НЕ глотаем: раньше `catch { return [] }` означал,
- * что после переименования каталога запрет проходил вхолостую — стражу
- * нечего было проверять, и он молча зеленел.
+ * A read error is deliberately NOT swallowed: `catch { return [] }` used to mean
+ * that once a directory was renamed the ban ran on nothing — the guard had
+ * nothing left to check, and it quietly went green.
  */
 function sourceFiles(dir: string): string[] {
   return readdirSync(dir, { recursive: true, encoding: 'utf-8' })
@@ -26,9 +26,9 @@ function sourceFiles(dir: string): string[] {
     .filter((p) => p.endsWith('.ts') && !p.endsWith('.spec.ts'));
 }
 
-describe('случайность только через Rng', () => {
+describe('randomness only through Rng', () => {
   for (const root of ROOTS) {
-    it(`${root} не зовёт ${FORBIDDEN}`, () => {
+    it(`${root} never calls ${FORBIDDEN}`, () => {
       const guilty = sourceFiles(join(process.cwd(), root)).filter((file) =>
         code(readFileSync(file, 'utf-8')).includes(FORBIDDEN),
       );
@@ -36,16 +36,16 @@ describe('случайность только через Rng', () => {
     });
   }
 
-  it('запрет ловит настоящий вызов, а не только отсутствие файлов', () => {
+  it('the ban catches a real call, not merely the absence of files', () => {
     expect(code(`const x = ${FORBIDDEN}();`)).toContain(FORBIDDEN);
-    expect(code(`// про ${FORBIDDEN} здесь только слова`)).not.toContain(FORBIDDEN);
-    expect(code(`/* и ${FORBIDDEN} в блоке тоже */`)).not.toContain(FORBIDDEN);
+    expect(code(`// just words about ${FORBIDDEN} here`)).not.toContain(FORBIDDEN);
+    expect(code(`/* and ${FORBIDDEN} inside a block, too */`)).not.toContain(FORBIDDEN);
   });
 
-  // Страховка на оба каталога, а не только на домен: иначе исчезнувший `ai/`
-  // не заметил бы никто, а запрет «выполнялся» бы на пустом множестве файлов.
+  // A safety net for both directories, not for the domain alone: otherwise a
+  // vanished `ai/` would go unnoticed and the ban would "run" over an empty set of files.
   for (const root of ROOTS) {
-    it(`${root} вообще существует и содержит исходники`, () => {
+    it(`${root} exists at all and holds source files`, () => {
       expect(sourceFiles(join(process.cwd(), root)).length).toBeGreaterThan(0);
     });
   }

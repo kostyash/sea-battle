@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { FLEET_SHIPS, FLEET_SPEC, FLEET_SPEC as SPEC, Ship, TOTAL_DECKS, isSunk, shipName } from './fleet';
+import { FLEET_SHIPS, FLEET_SPEC as SPEC, Ship, TOTAL_DECKS, isSunk } from './fleet';
 
 const ship = (size: number, hits: number): Ship => ({
   id: 0,
@@ -11,8 +11,8 @@ const ship = (size: number, hits: number): Ship => ({
   hits,
 });
 
-describe('состав флота', () => {
-  it('один линкор, два крейсера, три эсминца, четыре катера', () => {
+describe('the fleet roster', () => {
+  it('one four-decker, two three-deckers, three two-deckers, four single-deckers', () => {
     expect(SPEC.map((s) => [s.size, s.count])).toEqual([
       [4, 1],
       [3, 2],
@@ -21,49 +21,37 @@ describe('состав флота', () => {
     ]);
   });
 
-  it('десять вымпелов и двадцать палуб', () => {
+  it('ten pennants and twenty decks', () => {
     expect(FLEET_SHIPS).toBe(10);
     expect(TOTAL_DECKS).toBe(20);
   });
 
-
-  it('калибры перечислены от крупного к мелкому и не повторяются', () => {
+  it('the classes run from the largest down and no length appears twice', () => {
     const sizes = SPEC.map((s) => s.size);
     expect(sizes).toEqual([...sizes].sort((a, b) => b - a));
     expect(new Set(sizes).size).toBe(sizes.length);
   });
 
-  it('у каждого класса есть название', () => {
-    for (const s of SPEC) expect(s.name.length).toBeGreaterThan(0);
-  });
-});
-
-describe('shipName', () => {
-  it('называет каждый калибр', () => {
-    expect(shipName(4)).toBe('Линкор');
-    expect(shipName(3)).toBe('Крейсер');
-    expect(shipName(2)).toBe('Эсминец');
-    expect(shipName(1)).toBe('Катер');
-  });
-
-  it('на неизвестный калибр отвечает общим словом, а не падает', () => {
-    expect(shipName(5)).toBe('Корабль');
-    expect(shipName(0)).toBe('Корабль');
+  it('every class is a real one — at least one deck and at least one hull', () => {
+    for (const s of SPEC) {
+      expect(s.size).toBeGreaterThan(0);
+      expect(s.count).toBeGreaterThan(0);
+    }
   });
 });
 
 describe('isSunk', () => {
-  it('целый корабль не потоплен', () => {
+  it('a ship with decks still to spare is not sunk', () => {
     expect(isSunk(ship(3, 0))).toBe(false);
     expect(isSunk(ship(3, 2))).toBe(false);
   });
 
-  it('корабль с попаданиями по числу палуб потоплен', () => {
+  it('a ship hit as many times as it has decks is sunk', () => {
     expect(isSunk(ship(1, 1))).toBe(true);
     expect(isSunk(ship(4, 4))).toBe(true);
   });
 
-  it('лишние попадания ничего не ломают', () => {
+  it('hits beyond the deck count break nothing', () => {
     expect(isSunk(ship(2, 3))).toBe(true);
   });
 });
