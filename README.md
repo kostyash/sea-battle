@@ -39,6 +39,14 @@ The opponent sees only what you see: the grid of marks and the list of ship size
 not yet sunk. It never peeks at your deployment — see `chooseShot` in
 `src/app/ai/opponent.ts`, which is passed only `shots` and the sizes of the surviving ships.
 
+It also thinks about where to moor its own fleet. Drawing a legal deployment at
+random is not neutral: the no-touching rule leaves far more room in the middle of
+the square than along the edges, so an even draw crowds the ships into the centre
+— exactly where a density-counting hunter looks first. Instead a dozen fleets are
+dealt and the one lying in the coldest water puts to sea, which is worth about
+3.6 extra salvos against that hunter: more than the gap between two difficulty
+levels. Your own draw-lots button uses the same mooring.
+
 ## Languages
 
 English, Russian and Hebrew, switched at runtime from the button in the masthead;

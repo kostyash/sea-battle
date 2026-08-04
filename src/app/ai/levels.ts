@@ -8,6 +8,7 @@
 
 export type Difficulty = 'cabin-boy' | 'midshipman' | 'admiral';
 
+/** Weakest first — the order they are offered in. */
 export const DIFFICULTIES: readonly Difficulty[] = ['cabin-boy', 'midshipman', 'admiral'];
 
 /** The translation keys a level answers to. */

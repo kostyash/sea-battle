@@ -69,6 +69,7 @@ once the DOM tests are in. The red gate is recorded in the journal, not hidden.
 - [x] The whole game on one screen at 1920 × 1080, without a page scrollbar
 - [x] Self-hosted fonts: no request leaves this origin any more
 - [x] Turn a ship that is already on the chart, with the gesture that already turns things
+- [x] A harder opponent — found on the mooring side, not the shooting side
 - [x] Phase 6 gate: the whole suite + the production build + `npm run test:sim`,
       coverage held to 95% on `src/app/i18n/**` as well
 
@@ -303,3 +304,38 @@ put off.
   Build exit 0, `npm test -- --run` — 388/388, and the gesture driven in a real
   browser: the four-decker turns on its bow, and with a boat two squares away it
   refuses and explains.
+- Phase 6, a harder opponent. Asked for as a level above the Admiral, on the
+  reasoning that his density map counts each surviving ship on its own and never
+  checks that they could all be on the board at once. The reasoning is sound and
+  the level was built: deal whole legal fleets consistent with every mark, count
+  how often each square is occupied, fire at the commonest. It lost. Three
+  goes at it — fixing a real weighting bug where two cruisers counted as one,
+  raising the deals from 160 to 600, adding the Midshipman's lattice to the hunt,
+  aiming the kill by "does this square belong to the ship I have already hit"
+  rather than by bare occupancy — and the best of them came in at 55.34 against
+  the Admiral's 55.16 over five hundred games. A 200-game run had it 0.15 ahead
+  at one point, which is exactly the sort of margin that is worth nothing.
+  Reading up settled why: the exact density map *is* the published state of the
+  art for this game, around 42 salvos against 64 for parity with hunt-and-target
+  on the fleet those articles use. Monte Carlo replaces an exact count of a
+  slightly wrong quantity with a noisy count of the right one, and on a hundred
+  squares the noise is larger than the difference it was meant to reveal. The
+  sampler is deleted; this paragraph is what is left of it, so that nobody
+  rebuilds it expecting a different answer.
+  The gain was on the other side of the board entirely, and it was the player who
+  pointed at it: how the opponent moors its own fleet. An even draw is not
+  neutral — the no-touching rule leaves far more room in the middle than at the
+  edges, so a uniform draw crowds the ships into the centre, which is exactly
+  where a density hunter looks first. The fleet was mooring itself where it was
+  easiest to find. Now a dozen legal fleets are dealt and the one lying in the
+  coldest water goes to sea. Best-of-a-dozen and not the coldest obtainable, on
+  purpose: squeezed harder every game would open with the same edges and corners,
+  and a habit is worth more to an opponent than a good average.
+  Paired against the same layouts, that is worth **+3.59 ± 0.93 salvos at 7.8σ** —
+  more than the whole gap between Midshipman and Admiral, which is 2.2. The
+  simulation now reports paired margins in standard errors, because "0.15 better"
+  and "3.59 better" needed telling apart and the mean alone would not do it.
+  The player's own draw uses the same mooring: whoever asks for one should not be
+  handed a worse deployment than the computer keeps for itself.
+  Build exit 0, `npm test -- --run` — 397/397, coverage 95.4% of statements,
+  `npm run test:sim` — Admiral 54.91 < Midshipman 57.13 < Cabin Boy 63.19.

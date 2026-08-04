@@ -1,4 +1,5 @@
 import { InjectionToken, Injectable, computed, inject, signal } from '@angular/core';
+import { hiddenBoard } from '../ai/berthing';
 import { chooseShot } from '../ai/opponent';
 import { Difficulty } from '../ai/levels';
 import { AudioService } from './audio';
@@ -88,7 +89,7 @@ export class GameStore {
   readonly phase = signal<Phase>('deploy');
   readonly difficulty = signal<Difficulty>('midshipman');
   readonly player = signal<Board>(emptyBoard('player'));
-  readonly enemy = signal<Board>(randomBoard(this.rng, 'enemy'));
+  readonly enemy = signal<Board>(hiddenBoard(this.rng, 'enemy'));
   readonly turn = signal<Side>('player');
   /** A move is under way: a shot animating, or the opponent thinking. */
   readonly busy = signal(false);
@@ -251,7 +252,9 @@ export class GameStore {
 
   autoPlace(): void {
     if (this.phase() !== 'deploy') return;
-    this.player.set(randomBoard(this.rng, 'player'));
+    // The same mooring the opponent gives itself — a player who asks for a draw
+    // should not be handed a worse deployment than the computer keeps for itself.
+    this.player.set(hiddenBoard(this.rng, 'player'));
     this.pickedSize.set(null);
     this.audio.place();
     this.message.set({ key: 'msg.autoPlaced' });
@@ -389,7 +392,7 @@ export class GameStore {
     this.era++;
     this.phase.set('deploy');
     this.player.set(emptyBoard('player'));
-    this.enemy.set(randomBoard(this.rng, 'enemy'));
+    this.enemy.set(hiddenBoard(this.rng, 'enemy'));
     this.turn.set('player');
     this.busy.set(false);
     this.winner.set(null);

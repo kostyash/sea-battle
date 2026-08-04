@@ -19,6 +19,7 @@ const ROOT = process.cwd();
 
 const ENTRY = `
 export { randomBoard } from './src/app/domain/placement';
+export { hiddenBoard } from './src/app/ai/berthing';
 export { seededRng } from './src/app/domain/rng';
 export { afloatSizes, fire, isFleetDestroyed } from './src/app/domain/shot';
 export { chooseShot } from './src/app/ai/opponent';
@@ -56,13 +57,14 @@ try {
   fail('failed to build the simulation');
 }
 
-const { randomBoard, seededRng, afloatSizes, fire, isFleetDestroyed, chooseShot } = await import(
-  pathToFileURL(bundlePath).href
-);
+const { randomBoard, hiddenBoard, seededRng, afloatSizes, fire, isFleetDestroyed, chooseShot } =
+  await import(
+    pathToFileURL(bundlePath).href
+  );
 
 /** A single game: how many salvos the whole fleet took. */
-function shotsToWin(level, layoutSeed, aiSeed) {
-  let board = randomBoard(seededRng(layoutSeed), 'player');
+function shotsToWin(level, layoutSeed, aiSeed, moor = randomBoard) {
+  let board = moor(seededRng(layoutSeed), 'player');
   const rng = seededRng(aiSeed);
   let shots = 0;
 
@@ -116,6 +118,32 @@ if (!(midshipman < cabinBoy))
 console.log(
   `  ✓ the order of strength holds: Admiral ${admiral.toFixed(2)} < ` +
     `Midshipman ${midshipman.toFixed(2)} < Cabin Boy ${cabinBoy.toFixed(2)}\n`,
+);
+
+/**
+ * The other half of the question: not how well the opponent shoots, but how
+ * well it hides. The same shooter is set on the same layouts, moored evenly and
+ * then moored against the hunter's map, and the difference is what the mooring
+ * is worth. Paired again — it is the same layout seed on both sides.
+ */
+const HIDE_LEVEL = 'admiral';
+const even = [];
+const hidden = [];
+for (let g = 0; g < GAMES; g++) {
+  even.push(shotsToWin(HIDE_LEVEL, g, g * 7919 + 13, randomBoard));
+  hidden.push(shotsToWin(HIDE_LEVEL, g, g * 7919 + 13, hiddenBoard));
+}
+const gap = hidden.map((shots, g) => shots - even[g]);
+const gapMean = gap.reduce((s, x) => s + x, 0) / gap.length;
+const gapVar = gap.reduce((s, x) => s + (x - gapMean) ** 2, 0) / (gap.length - 1);
+const gapErr = Math.sqrt(gapVar / gap.length);
+
+console.log('  Mooring, against the same hunter:\n');
+console.log(`  drawn evenly       mean ${(even.reduce((s, x) => s + x, 0) / even.length).toFixed(2)}`);
+console.log(
+  `  drawn to hide      mean ${(hidden.reduce((s, x) => s + x, 0) / hidden.length).toFixed(2)}` +
+    `   ${gapMean >= 0 ? '+' : ''}${gapMean.toFixed(2)} ± ${(gapErr * 2).toFixed(2)} salvos ` +
+    `(${(gapMean / gapErr).toFixed(1)}σ)\n`,
 );
 
 cleanup();

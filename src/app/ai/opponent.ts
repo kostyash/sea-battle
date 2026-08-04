@@ -25,12 +25,20 @@ export function chooseShot(
       return novice(shots, open, rng);
     case 'midshipman':
       return officer(shots, afloat, open, rng);
-    default: {
-      // if no placement fit at all — fall back to the Midshipman search
-      const dense = densityShot(shots, afloat, open, rng);
-      return dense === -1 ? officer(shots, afloat, open, rng) : dense;
-    }
+    default:
+      return dense(shots, afloat, open, rng);
   }
+}
+
+/** The density map, with the Midshipman's search behind it if nothing fit. */
+function dense(
+  shots: readonly CellState[],
+  afloat: readonly number[],
+  open: number[],
+  rng: Rng,
+): number {
+  const found = densityShot(shots, afloat, open, rng);
+  return found === -1 ? officer(shots, afloat, open, rng) : found;
 }
 
 /* ── Cabin Boy: fires blind, finishes off every other time ─────────────── */
