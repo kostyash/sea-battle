@@ -110,6 +110,82 @@ describe('GameStore', () => {
       expect(store.orient()).toBe('v');
     });
 
+    /**
+     * Turning a ship that is already down is the whole point of `rotateAt` — the
+     * moment you put one on the chart is the moment you see it wanted to be the
+     * other way round.
+     */
+    describe('turning a ship already on the chart', () => {
+      const shipAt = (store: GameStore, cell: number) =>
+        store.player().ships.find((s) => s.id === store.player().shipAt[cell])!;
+
+      it('turns it where it stands, keeping its bow', () => {
+        const store = make();
+        store.pickSize(4);
+        store.placeAt(idx(2, 3));
+        expect(shipAt(store, idx(2, 3)).orient).toBe('h');
+
+        store.rotateAt(idx(2, 4));
+
+        const ship = shipAt(store, idx(2, 3));
+        expect(ship.orient).toBe('v');
+        expect([ship.row, ship.col]).toEqual([2, 3]);
+        expect(store.player().ships).toHaveLength(1);
+        expect(store.message().key).toBe('msg.turned');
+      });
+
+      it('is pulled back onto the board when turning would hang it over the edge', () => {
+        const store = make();
+        store.pickSize(4);
+        // bow on the last row: turning downwards would put the stern off the board
+        store.placeAt(idx(SIZE - 1, 1));
+
+        store.rotateAt(idx(SIZE - 1, 1));
+
+        const ship = shipAt(store, idx(SIZE - 1, 1));
+        expect(ship.orient).toBe('v');
+        expect(ship.row).toBe(SIZE - 4);
+        expect(ship.cells.every((c) => c < SIZE * SIZE)).toBe(true);
+      });
+
+      it('refuses when a neighbour is too close, and leaves the ship where it was', () => {
+        const store = make();
+        store.pickSize(4);
+        store.placeAt(idx(0, 0));
+        store.pickSize(1);
+        // a boat two rows down blocks the four-decker from standing up
+        store.placeAt(idx(2, 0));
+
+        store.rotateAt(idx(0, 0));
+
+        expect(shipAt(store, idx(0, 0)).orient).toBe('h');
+        expect(store.message().key).toBe('msg.noTurn');
+      });
+
+      it('on open water it turns the ship waiting to be placed instead', () => {
+        const store = make();
+        expect(store.orient()).toBe('h');
+
+        store.rotateAt(idx(5, 5));
+        expect(store.orient()).toBe('v');
+
+        // and a right click that landed on no square at all does the same
+        store.rotateAt(-1);
+        expect(store.orient()).toBe('h');
+      });
+
+      it('once the battle is on, nothing turns any more', () => {
+        const store = make();
+        store.autoPlace();
+        const before = store.player().ships.map((s) => s.orient).join('');
+        store.beginBattle();
+
+        store.rotateAt(store.player().ships[0].cells[0]);
+
+        expect(store.player().ships.map((s) => s.orient).join('')).toBe(before);
+      });
+    });
+
     it('drawing lots deploys the whole fleet', () => {
       const store = make();
       store.autoPlace();

@@ -4,7 +4,7 @@ import { Difficulty } from '../ai/levels';
 import { AudioService } from './audio';
 import { Board, ShotResult, emptyBoard } from '../domain/board';
 import { FLEET_SHIPS, FLEET_SPEC, isSunk } from '../domain/fleet';
-import { Orientation, Side } from '../domain/grid';
+import { Orientation, SIZE, Side } from '../domain/grid';
 import {
   canPlace,
   clippedCells,
@@ -173,6 +173,42 @@ export class GameStore {
 
   setHover(cell: number | null): void {
     if (this.phase() === 'deploy') this.hover.set(cell);
+  }
+
+  /**
+   * Turn whatever is under the pointer: a ship already standing on the chart, or
+   * else the one waiting to be placed. One gesture, and it means the same thing
+   * in both cases — which is the point, since a ship you have just put down is
+   * exactly when you discover you wanted it the other way round.
+   *
+   * It pivots on the bow, and is pulled back onto the board if turning would
+   * take the stern over the edge. If it still will not fit — a neighbour is too
+   * close — nothing moves and the rail says so, rather than the ship silently
+   * refusing.
+   */
+  rotateAt(cell: number): void {
+    if (this.phase() !== 'deploy') return;
+    const board = this.player();
+    const id = cell < 0 ? -1 : board.shipAt[cell];
+    if (id === -1) {
+      this.rotate();
+      return;
+    }
+
+    const ship = board.ships.find((s) => s.id === id)!;
+    const turned = ship.orient === 'h' ? 'v' : 'h';
+    const row = turned === 'v' ? Math.min(ship.row, SIZE - ship.size) : ship.row;
+    const col = turned === 'h' ? Math.min(ship.col, SIZE - ship.size) : ship.col;
+
+    const bare = withoutShipAt(board, cell);
+    if (!canPlace(bare, row, col, ship.size, turned)) {
+      this.message.set({ key: 'msg.noTurn' });
+      return;
+    }
+
+    this.player.set(withShip(bare, row, col, ship.size, turned));
+    this.audio.rotate();
+    this.message.set({ key: 'msg.turned', params: { size: ship.size } });
   }
 
   /** A click on your own chart: place the picked ship, or take back one already standing. */

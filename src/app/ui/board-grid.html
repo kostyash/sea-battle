@@ -63,6 +63,7 @@
             [attr.aria-disabled]="!interactive()"
             [attr.tabindex]="focusIdx() === i ? 0 : -1"
             [attr.aria-label]="label(i)"
+            [attr.data-cell]="i"
             (pointerenter)="onEnter(i)"
             (focus)="onFocus(i)"
             (blur)="onBlur()"

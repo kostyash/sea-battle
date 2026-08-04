@@ -54,8 +54,9 @@ export const EN = {
   'action.autoPlace': 'Draw lots',
   'action.clear': 'Clear',
   'deploy.hint':
-    'Pick a ship, move the pointer over your own chart and click. The right mouse button or R rotates it. ' +
-    'Clicking a ship already on the chart takes it back off. Ships may not touch, not even at the corners.',
+    'Pick a ship, move the pointer over your own chart and click. The right mouse button or R turns it — ' +
+    'a ship already on the chart just as readily as the one you are about to place. Clicking a placed ship ' +
+    'takes it back off. Ships may not touch, not even at the corners.',
   'deploy.remaining': { one: '{n} ship left to place', other: '{n} ships left to place' },
   'action.toBattle': 'To battle',
 
@@ -103,6 +104,8 @@ export const EN = {
   'msg.shipRemoved': '{ship} taken off the chart',
   'msg.pickFirst': 'Pick a ship from the roster first',
   'msg.allPlaced': 'Every {ship_lc} is already on the chart',
+  'msg.turned': '{ship} turned',
+  'msg.noTurn': 'It cannot turn here: ships may not touch, not even at the corners',
   'msg.noRoom': 'It will not fit here: ships may not touch, not even at the corners',
   'msg.fleetReady': 'Fleet in position. To battle!',
   'msg.keepPlacing': 'Carry on with the deployment',

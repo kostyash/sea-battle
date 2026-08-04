@@ -66,7 +66,8 @@ export class BoardGrid {
   readonly cellEnter = output<number>();
   readonly cellLeave = output<void>();
   readonly cellPick = output<number>();
-  readonly rotateRequest = output<void>();
+  /** The cell that was right-clicked, or -1 if the click missed the squares. */
+  readonly rotateRequest = output<number>();
 
   private readonly cellRefs = viewChildren<ElementRef<HTMLButtonElement>>('cellRef');
 
@@ -188,10 +189,17 @@ export class BoardGrid {
     this.cellPick.emit(i);
   }
 
+  /**
+   * Right-click turns whatever is under the pointer, so the cell has to travel
+   * with the request. The handler stays on the grid rather than on each square —
+   * a right-click landing in the hairline between two of them should still turn
+   * something, and that one reports -1.
+   */
   protected onContext(event: MouseEvent): void {
     if (!this.interactive()) return;
     event.preventDefault();
-    this.rotateRequest.emit();
+    const square = (event.target as HTMLElement | null)?.closest<HTMLElement>('[data-cell]');
+    this.rotateRequest.emit(square ? Number(square.dataset['cell']) : -1);
   }
 
   /**

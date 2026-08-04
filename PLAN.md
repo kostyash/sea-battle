@@ -68,6 +68,7 @@ once the DOM tests are in. The red gate is recorded in the journal, not hidden.
 - [x] Right to left for Hebrew, with the chart itself deliberately left to right
 - [x] The whole game on one screen at 1920 × 1080, without a page scrollbar
 - [x] Self-hosted fonts: no request leaves this origin any more
+- [x] Turn a ship that is already on the chart, with the gesture that already turns things
 - [x] Phase 6 gate: the whole suite + the production build + `npm run test:sim`,
       coverage held to 95% on `src/app/i18n/**` as well
 
@@ -280,3 +281,25 @@ put off.
   files, as that licence requires.
   Build exit 0 (60.7 kB gzip of JS and CSS, plus the fonts as separate cached
   files), `npm test -- --run` — 381/381.
+- Phase 6, turning a ship already down. Asked for as drag-and-drop deployment, and
+  a working prototype of that is what settled it: pressing on the roster means the
+  drag vector is enormously horizontal before the pointer is anywhere near the
+  chart, so measuring orientation from the press point lays every ship flat.
+  Anchoring the measurement at the moment the pointer crosses onto the chart fixes
+  the arithmetic and not the feel — moving the ship and choosing its orientation
+  stay the same gesture, so it keeps flipping under your hand. Shown, tried,
+  rejected, and the requirement turned into the thing actually wanted: put a ship
+  down, then turn it.
+  Right-click already turned the ship waiting to be placed, so now it turns
+  whatever is under the pointer — a ship already standing, or else the pending one.
+  One gesture, one meaning, nothing new to learn. The cell has to travel with the
+  request, so `rotateRequest` carries it and reports -1 for a click that lands in
+  the hairline between squares.
+  It pivots on the bow and is pulled back onto the board if turning would take the
+  stern over the edge; if a neighbour is too close it does not move and the rail
+  says why, rather than the ship silently refusing. Both of those are guards, and
+  both were watched going red — dropping the clamp and dropping the legality check
+  each fails its own test and nothing else.
+  Build exit 0, `npm test -- --run` — 388/388, and the gesture driven in a real
+  browser: the four-decker turns on its bow, and with a boat two squares away it
+  refuses and explains.

@@ -21,8 +21,9 @@ decks in all.
 ## Deployment
 
 Pick a ship from the fleet roster, hover over your own chart, click.
-`R` or the right mouse button rotates it; clicking a ship already on the board takes it back off.
-The random-draw button deploys the whole fleet at once.
+`R` or the right mouse button turns it — and turns a ship already standing on the
+chart just as readily, pivoting on its bow. Clicking a placed ship takes it back
+off. The random-draw button deploys the whole fleet at once.
 
 The arrow keys walk the crosshair across the cells, `Enter` fires.
 

@@ -154,6 +154,34 @@ describe('BoardGrid', () => {
       expect(event.defaultPrevented).toBe(true);
     });
 
+    /**
+     * The cell has to travel with the request: right-click turns whatever is
+     * under the pointer, and the grid is the only thing that knows which square
+     * that was.
+     */
+    it('the right button reports the square it landed on', () => {
+      render(emptyBoard('player'), { interactive: true });
+      const asked: number[] = [];
+      fixture.componentInstance.rotateRequest.subscribe((cell) => asked.push(cell));
+
+      const square = fixture.nativeElement.querySelectorAll('button.cell')[idx(3, 7)];
+      square.dispatchEvent(new MouseEvent('contextmenu', { cancelable: true, bubbles: true }));
+
+      expect(asked).toEqual([idx(3, 7)]);
+    });
+
+    it('a right click that lands between the squares reports none of them', () => {
+      render(emptyBoard('player'), { interactive: true });
+      const asked: number[] = [];
+      fixture.componentInstance.rotateRequest.subscribe((cell) => asked.push(cell));
+
+      fixture.nativeElement
+        .querySelector('[role="grid"]')
+        .dispatchEvent(new MouseEvent('contextmenu', { cancelable: true, bubbles: true }));
+
+      expect(asked).toEqual([-1]);
+    });
+
     it('on an inactive board the right button asks for nothing', () => {
       render(emptyBoard('player'), { interactive: false });
       let asked = 0;
