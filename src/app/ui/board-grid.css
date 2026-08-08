@@ -337,30 +337,6 @@
   background-color: rgba(224, 71, 43, 0.14);
 }
 
-/* ── the opponent's reckoning, washed onto the paper ────────────────────── */
-
-.reckoning {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  display: grid;
-  grid-template: repeat(10, 1fr) / repeat(10, 1fr);
-  pointer-events: none;
-}
-
-.reckoning span {
-  display: block;
-  background: var(--ink);
-  transition: opacity 0.28s ease;
-}
-
-/* under the wash a hull has to be knocked out of the ink rather than drawn over
-   it, or the heaviest water swallows the ships the replay is about */
-:host(.is-chart) .reckoning ~ .hull {
-  background: rgba(221, 211, 183, 0.5);
-  box-shadow: 0 0 0 1px rgba(221, 211, 183, 0.45);
-}
-
 /* ── ships ─────────────────────────────────────────────────────────────── */
 
 .hull,

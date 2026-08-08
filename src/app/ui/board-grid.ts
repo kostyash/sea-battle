@@ -13,7 +13,7 @@ import {
 import { isSunk } from '../domain/fleet';
 import { Ship } from '../domain/fleet';
 import { CELLS, SIZE, colOf, rowOf } from '../domain/grid';
-import { Board, CellState } from '../domain/board';
+import { Board } from '../domain/board';
 import { Splash } from '../core/game-store';
 import { I18n } from '../i18n/i18n';
 import { MsgKey } from '../i18n/en';
@@ -32,9 +32,6 @@ const STATE_KEY: Record<string, MsgKey> = {
   hit: 'cell.hit',
   sunk: 'cell.sunk',
 };
-
-/** How many steps the reckoning is shaded in. */
-const WASH_BANDS = 6;
 
 /** Depth soundings on the paper — just enough of them to make the chart look worked. */
 const SOUNDINGS = [
@@ -63,14 +60,6 @@ export class BoardGrid {
   readonly ghost = input<Ghost | null>(null);
   readonly splash = input<Splash | null>(null);
   readonly caption = input('');
-  /**
-   * The opponent's reckoning of each square, washed onto the paper. Null while
-   * the game is on — it is only ever shown afterwards, over a chart the player
-   * already knows, so it cannot tell them anything they should have had to find out.
-   */
-  readonly heat = input<readonly number[] | null>(null);
-  /** The marks as they stood at some earlier salvo, for the replay to roll back to. */
-  readonly asOf = input<readonly CellState[] | null>(null);
   /** Once the battle is over the opponent's square is charted in full. */
   readonly surveyed = input(false);
 
@@ -86,8 +75,6 @@ export class BoardGrid {
   protected readonly gridRows = Array.from({ length: SIZE }, (_, r) =>
     Array.from({ length: SIZE }, (_, c) => r * SIZE + c),
   );
-  /** Flat 0…99, for overlays that lie across the whole square. */
-  protected readonly gridCells = Array.from({ length: CELLS }, (_, i) => i);
   protected readonly rows = this.i18n.rowLabels;
   protected readonly cols = this.i18n.colLabels;
   protected readonly soundings = SOUNDINGS;
@@ -127,40 +114,8 @@ export class BoardGrid {
   }
 
   protected state(i: number): string {
-    return this.asOf()?.[i] ?? this.board().shots[i];
+    return this.board().shots[i];
   }
-
-  /**
-   * The wash, in bands rather than a smooth ramp, stretched between the coldest
-   * and the warmest square still in play.
-   *
-   * Scaled from zero instead, the whole chart goes one flat colour early on —
-   * every square is worth about the same then, and the paper disappears under
-   * it. What carries the meaning is the ranking, so the ramp is spent on the
-   * range that actually exists. Banding is how a chart shades depth, and it is
-   * also what makes a maximum readable rather than a blur.
-   */
-  protected readonly wash = computed<readonly number[] | null>(() => {
-    const score = this.heat();
-    if (!score) return null;
-    const shots = this.asOf() ?? this.board().shots;
-
-    let top = 0;
-    let low = Infinity;
-    for (let i = 0; i < CELLS; i++) {
-      if (shots[i] !== 'unknown') continue;
-      if (score[i] > top) top = score[i];
-      if (score[i] < low) low = score[i];
-    }
-    if (top <= 0) return null;
-    const spread = top - low;
-
-    return Array.from({ length: CELLS }, (_, i) => {
-      if (shots[i] !== 'unknown') return 0;
-      const share = spread > 0 ? (score[i] - low) / spread : 1;
-      return Math.ceil(share * WASH_BANDS) / WASH_BANDS;
-    });
-  });
 
   protected label(i: number): string {
     return this.i18n.t('cell.label', { cell: i, text: this.i18n.t(STATE_KEY[this.state(i)]) });

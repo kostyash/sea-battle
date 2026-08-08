@@ -85,11 +85,6 @@ export const HE: Dictionary = {
   'result.against': 'היריב — {text}',
   'action.rematch': 'קרב נוסף',
   'action.redeploy': 'פריסה מחדש',
-  'replay.open': 'מה שהאדמירל ראה',
-  'replay.title': 'החישוב שלו',
-  'replay.salvo': 'מטח',
-  'replay.hint': 'ככל שהמים כהים יותר, כך העריך שסביר יותר שיש שם ספינה.',
-  'replay.close': 'סיום',
   'action.survey': 'סקירת ריבוע היריב',
 
   'msg.deploy': 'פרוס את הצי שלך במים שלך',

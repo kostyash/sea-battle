@@ -70,11 +70,16 @@ once the DOM tests are in. The red gate is recorded in the journal, not hidden.
 - [x] Self-hosted fonts: no request leaves this origin any more
 - [x] Turn a ship that is already on the chart, with the gesture that already turns things
 - [x] A harder opponent — found on the mooring side, not the shooting side
-- [x] Show the Admiral's reckoning after the battle, washed onto your own chart
+- [x] ~~Show the Admiral's reckoning after the battle, washed onto your own chart~~ —
+      built, then taken back out again in phase 7
 - [x] A mirror on the result card: what the Admiral would have needed
 - [x] The chart inks itself in on the first frame
 - [x] Phase 6 gate: the whole suite + the production build + `npm run test:sim`,
       coverage held to 95% on `src/app/i18n/**` as well
+
+## Phase 7 — taking things back out
+
+- [x] Remove the replay of the Admiral's reckoning: it confused more than it told
 
 ## Open items (next pass)
 
@@ -394,3 +399,17 @@ put off.
   the chart simply starts finished.
   Build exit 0, `npm test -- --run` — 419/419, coverage 95.1% of statements,
   `npm run test:sim` green with the mooring still worth +3.38 ± 0.83 at 8.1σ.
+- Phase 7, item 1: the replay of the Admiral's reckoning is gone. It read as a
+  puzzle rather than an explanation — a chart of shifting ink with a scrub bar
+  under it, shown at the one moment the player has already stopped caring where
+  the ships were. Out went the `Reckoning` frames and the whole replay state from
+  the store, the bar above the home chart, the `heat`/`asOf` inputs and the
+  banded wash on `board-grid`, the button on the result card, the `replay.*` keys
+  in all three dictionaries, and the CSS of all three. `ai/density.ts` stays
+  untouched: the Admiral still computes a map before every salvo, he simply no
+  longer keeps it — one call and a hundred numbers a turn less. The mirror on the
+  result card stays too; it answers a question the player actually asked.
+  Build exit 0 with no warnings, `npm test -- --run` — 406/406 (13 tests removed
+  with the feature), coverage 95.39% of statements / 95.14% of branches,
+  `npm run test:sim` green: Admiral 55.16 < Midshipman 57.05 < Cabin Boy 63.10,
+  the mooring still worth +3.38 ± 0.83 at 8.1σ.

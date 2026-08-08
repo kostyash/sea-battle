@@ -46,12 +46,6 @@ import { I18n } from '../i18n/i18n';
           </button>
         </div>
 
-        @if (store.reckoning().length) {
-          <button type="button" class="btn btn--ghost reckon" (click)="store.openReplay()">
-            {{ i18n.t('replay.open') }}
-          </button>
-        }
-
         <button type="button" class="survey" (click)="store.closeVerdict()">
           {{ i18n.t('action.survey') }}
         </button>
@@ -170,10 +164,6 @@ import { I18n } from '../i18n/i18n';
       flex-wrap: wrap;
       gap: 0.6rem;
       justify-content: center;
-    }
-    .reckon {
-      margin-top: 0.9rem;
-      font-size: 13px;
     }
     .survey {
       margin-top: 1.1rem;
