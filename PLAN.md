@@ -80,6 +80,7 @@ once the DOM tests are in. The red gate is recorded in the journal, not hidden.
 ## Phase 7 — taking things back out
 
 - [x] Remove the replay of the Admiral's reckoning: it confused more than it told
+- [x] Bring the code up to the v22 conventions the CLI's MCP server states
 
 ## Open items (next pass)
 
@@ -413,3 +414,19 @@ put off.
   with the feature), coverage 95.39% of statements / 95.14% of branches,
   `npm run test:sim` green: Admiral 55.16 < Midshipman 57.05 < Cabin Boy 63.10,
   the mooring still worth +3.38 ± 0.83 at 8.1σ.
+- Phase 7, item 2: the Angular CLI's MCP server is rigged for this workspace, and
+  it answers for the version actually installed rather than for whatever was true
+  when a habit was formed. Asked, it named two things we were behind on, and both
+  are now closed. `changeDetection: ChangeDetectionStrategy.OnPush` came out of
+  all seven components: OnPush is the strategy from v22 whether it is written or
+  not, so the line said nothing — angular.dev states it outright, and the DOM
+  tests agree, unchanged and green. The three services moved from
+  `@Injectable({ providedIn: 'root' })` to `@Service()`; the decorator is public
+  API in the installed 22.1.0 and `autoProvided` defaults to true, which is the
+  same rooting spelled shorter. Everything else the guide asks for was already
+  the house style — standalone without `standalone: true`, `input()`/`output()`,
+  host bindings in the decorator's `host`, native control flow, class and style
+  bindings, `inject()`, no `any`.
+  Build exit 0 with no warnings, `npm test -- --run` — 406/406, coverage gate
+  green at 95.38% of statements / 95.14% of branches. `npm run test:sim` not run:
+  nothing under `ai/` moved, and neither did the store's use of it.

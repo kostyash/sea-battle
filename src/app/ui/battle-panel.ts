@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { GameStore } from '../core/game-store';
 import { levelNameKey } from '../ai/levels';
 import { Board } from '../domain/board';
@@ -15,7 +15,6 @@ interface Pip {
 @Component({
   selector: 'app-battle-panel',
   imports: [ShipGlyph],
-  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="block">
       <p class="eyebrow">{{ i18n.t('battle.report') }}</p>

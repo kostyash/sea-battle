@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { GameStore } from '../core/game-store';
 import { DIFFICULTIES, levelHintKey, levelNameKey } from '../ai/levels';
 import { I18n } from '../i18n/i18n';
@@ -7,7 +7,6 @@ import { ShipGlyph } from './ship-glyph';
 @Component({
   selector: 'app-deploy-panel',
   imports: [ShipGlyph],
-  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="block">
       <p class="eyebrow">{{ i18n.t('fleet.title') }}</p>

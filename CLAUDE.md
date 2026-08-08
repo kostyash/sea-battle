@@ -125,7 +125,10 @@ What that guide asks for, and what this repository already does:
 - **Native control flow** — `@if`, `@for`, `@switch`, never `*ngIf` and friends.
 - **`class` and `style` bindings**, never `ngClass`/`ngStyle`.
 - **`inject()`**, not constructor injection. Services are single-responsibility
-  and `providedIn: 'root'`.
+  and carry the `@Service()` decorator — `autoProvided` defaults to true, which
+  is what `@Injectable({ providedIn: 'root' })` used to spell out.
+- **Do not write `changeDetection`.** `OnPush` is the strategy from v22 whether
+  it is stated or not, so stating it is noise.
 - **Strict types**: no `any`; `unknown` where the type is genuinely unknown; let
   inference do the obvious work.
 - **Accessibility is a requirement, not a polish pass**: AXE clean, WCAG AA
@@ -135,14 +138,6 @@ What that guide asks for, and what this repository already does:
   the standard to hold new UI to.
 - **External templates and styles are addressed relative to the component's
   `.ts`**, as `board-grid` does.
-
-Two places where the code is behind the current guide, both harmless and neither
-worth a churn commit on its own — fold them in when touching the file anyway:
-
-- Seven components still spell out `changeDetection: ChangeDetectionStrategy.OnPush`.
-  `OnPush` is the default from v22, so the line is now redundant.
-- The three services use `@Injectable({ providedIn: 'root' })`. v22 prefers the
-  shorter `@Service` decorator for new singletons.
 
 Nothing here uses forms or `NgOptimizedImage`: the one control was a range slider
 that has since been removed, and every image on the page is drawn in SVG or CSS.

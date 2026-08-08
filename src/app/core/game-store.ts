@@ -1,4 +1,4 @@
-import { InjectionToken, Injectable, computed, inject, signal } from '@angular/core';
+import { InjectionToken, Service, computed, inject, signal } from '@angular/core';
 import { salvosToClear } from '../ai/benchmark';
 import { hiddenBoard } from '../ai/berthing';
 import { chooseShot } from '../ai/opponent';
@@ -77,7 +77,7 @@ interface Tally {
   hits: number;
 }
 
-@Injectable({ providedIn: 'root' })
+@Service()
 export class GameStore {
   readonly audio = inject(AudioService);
   private readonly i18n = inject(I18n);

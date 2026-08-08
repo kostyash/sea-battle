@@ -1,4 +1,4 @@
-import { DOCUMENT, Injectable, computed, effect, inject, signal } from '@angular/core';
+import { DOCUMENT, Service, computed, effect, inject, signal } from '@angular/core';
 import { colOf, rowOf } from '../domain/grid';
 import { COL_LABELS, DEFAULT_LANG, Lang, ROW_LABELS, dirOf, isLang } from './lang';
 import { EN, MsgKey } from './en';
@@ -62,7 +62,7 @@ export function browserLanguages(): readonly string[] {
   return navigator.languages ?? [navigator.language];
 }
 
-@Injectable({ providedIn: 'root' })
+@Service()
 export class I18n {
   private readonly doc = inject(DOCUMENT);
 

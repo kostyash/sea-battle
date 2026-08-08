@@ -1,4 +1,4 @@
-import { Injectable, signal } from '@angular/core';
+import { Service, signal } from '@angular/core';
 
 /**
  * All sound is synthesised on the spot — not a single file is loaded.
@@ -28,7 +28,7 @@ function rememberMuted(value: boolean): void {
   }
 }
 
-@Injectable({ providedIn: 'root' })
+@Service()
 export class AudioService {
   readonly muted = signal(readMuted());
 

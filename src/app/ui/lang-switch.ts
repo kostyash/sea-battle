@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { I18n } from '../i18n/i18n';
 import { LANGS } from '../i18n/lang';
 
@@ -15,7 +15,6 @@ import { LANGS } from '../i18n/lang';
  */
 @Component({
   selector: 'app-lang-switch',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="langs" role="group" [attr.aria-label]="i18n.t('lang.group')">
       @for (l of langs; track l.id) {

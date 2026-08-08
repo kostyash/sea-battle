@@ -1,5 +1,4 @@
 import {
-  ChangeDetectionStrategy,
   Component,
   ElementRef,
   computed,
@@ -42,7 +41,6 @@ const SOUNDINGS = [
 @Component({
   selector: 'app-board-grid',
   imports: [ShipGlyph],
-  changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './board-grid.html',
   styleUrl: './board-grid.css',
   host: {

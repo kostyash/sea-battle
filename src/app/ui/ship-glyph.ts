@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { Component, computed, input } from '@angular/core';
 
 interface DeckBox {
   x: number;
@@ -15,7 +15,6 @@ const U = 20; // viewBox units per cell
  */
 @Component({
   selector: 'app-ship-glyph',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <svg [attr.viewBox]="viewBox()" role="presentation" focusable="false">
       <path class="hull" [attr.d]="hull()" />

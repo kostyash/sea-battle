@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { GameStore } from './core/game-store';
 import { I18n } from './i18n/i18n';
 import { BattlePanel } from './ui/battle-panel';
@@ -13,7 +13,6 @@ const ROTATE_KEYS = new Set(['r', 'к', 'ר']);
 @Component({
   selector: 'app-root',
   imports: [BoardGrid, DeployPanel, BattlePanel, ResultOverlay, LangSwitch],
-  changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './app.html',
   styleUrl: './app.css',
   host: {

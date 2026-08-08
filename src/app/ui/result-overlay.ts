@@ -1,5 +1,4 @@
 import {
-  ChangeDetectionStrategy,
   Component,
   ElementRef,
   afterNextRender,
@@ -13,7 +12,6 @@ import { I18n } from '../i18n/i18n';
 
 @Component({
   selector: 'app-result-overlay',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   host: { '(document:keydown.escape)': 'onEscape()' },
   template: `
     <div class="scrim" role="dialog" aria-modal="true" aria-labelledby="verdict">
