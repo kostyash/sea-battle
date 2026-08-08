@@ -27,6 +27,23 @@ off. The random-draw button deploys the whole fleet at once.
 
 The arrow keys walk the crosshair across the cells, `Enter` fires.
 
+On a touch screen there is no second button, so a finger **held** on a square does
+the same thing: half a second, and whatever is under it turns. A press that starts
+to wander is a scroll and is left alone. The panel says as much — the instruction
+is written twice and the input decides which wording you get.
+
+## On a phone
+
+The square is the same square; what changes is what is on screen when. While you
+are deploying, the opponent's water is empty and can do nothing for you, so it
+waits below the fold and the fleet roster comes straight after your own chart.
+Press *to battle* and the page brings the opponent's square up itself. The brass
+status line — whose move it is, what the last salvo did — pins to the top of the
+screen, because scrolled down to a chart you would otherwise be firing blind.
+
+`npm run shots` walks the whole game at four phone widths and leaves the pictures
+in `e2e/shots/`; it is run by hand when the layout is touched, not in CI.
+
 ## Opponent
 
 | Level | How it thinks |

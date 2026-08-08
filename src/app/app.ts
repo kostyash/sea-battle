@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, ElementRef, computed, effect, inject, viewChild } from '@angular/core';
 import { GameStore } from './core/game-store';
 import { I18n } from './i18n/i18n';
 import { BattlePanel } from './ui/battle-panel';
@@ -43,6 +43,21 @@ export class App {
     if (this.store.phase() === 'over') return this.i18n.t('turn.over');
     return this.i18n.t(this.store.turn() === 'player' ? 'turn.yours' : 'turn.theirs');
   });
+
+  private readonly away = viewChild<ElementRef<HTMLElement>>('away');
+
+  constructor() {
+    effect(() => {
+      if (this.store.phase() !== 'battle') return;
+      const section = this.away()?.nativeElement;
+      // Stacked, the opponent's square starts a screen below the rack the player
+      // has just pressed "to battle" in. Where both charts already stand side by
+      // side the page does not scroll and there is nothing to bring into view.
+      if (!section || document.documentElement.scrollHeight <= window.innerHeight + 40) return;
+      const still = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
+      section.scrollIntoView?.({ behavior: still ? 'auto' : 'smooth', block: 'start' });
+    });
+  }
 
   protected onKey(event: KeyboardEvent): void {
     if (!this.deploying()) return;

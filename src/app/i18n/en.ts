@@ -57,6 +57,10 @@ export const EN = {
     'Pick a ship, move the pointer over your own chart and click. The right mouse button or R turns it — ' +
     'a ship already on the chart just as readily as the one you are about to place. Clicking a placed ship ' +
     'takes it back off. Ships may not touch, not even at the corners.',
+  'deploy.hint.touch':
+    'Pick a ship and tap your own chart. Holding a square turns what is on it — a ship already ' +
+    'placed as readily as the one you are about to lay down. A tap on a placed ship takes it back ' +
+    'off. Ships may not touch, not even at the corners.',
   'deploy.remaining': { one: '{n} ship left to place', other: '{n} ships left to place' },
   'action.toBattle': 'To battle',
 

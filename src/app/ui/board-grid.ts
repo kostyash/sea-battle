@@ -32,6 +32,16 @@ const STATE_KEY: Record<string, MsgKey> = {
   sunk: 'cell.sunk',
 };
 
+/**
+ * How long a finger has to rest on a square before it means "turn this one".
+ * A touch screen has no second mouse button, and without this the only way to
+ * turn a ship already on the chart is to take it off and put it down again.
+ */
+const LONG_PRESS = 500;
+
+/** A press that wanders this far was the start of a scroll, not a press. */
+const PRESS_SLOP = 10;
+
 /** Depth soundings on the paper — just enough of them to make the chart look worked. */
 const SOUNDINGS = [
   [8, 14, 42], [26, 31, 27], [47, 12, 55], [63, 44, 18], [12, 68, 36],
@@ -80,6 +90,11 @@ export class BoardGrid {
   protected readonly focusIdx = signal(0);
   protected readonly hoverIdx = signal<number | null>(null);
   private wantsFocus = false;
+
+  private pressTimer: ReturnType<typeof setTimeout> | null = null;
+  private pressFrom: { x: number; y: number } | null = null;
+  /** A long press has already turned something: the tap and the menu after it are not new orders. */
+  private pressAnswered = false;
 
   /** Your own chart shows the whole fleet; in foreign waters, only what sinking confirmed. */
   protected readonly hulls = computed<Ship[]>(() => {
@@ -177,7 +192,48 @@ export class BoardGrid {
    */
   protected onPick(i: number): void {
     if (!this.interactive()) return;
+    // the tap that ends a long press was already answered by turning the ship
+    if (this.pressAnswered) {
+      this.pressAnswered = false;
+      return;
+    }
     this.cellPick.emit(i);
+  }
+
+  /**
+   * A finger held on a square turns whatever is under it — the same thing the
+   * right mouse button does, and the only way to reach it on a phone.
+   */
+  protected onPressStart(event: PointerEvent): void {
+    this.pressAnswered = false;
+    this.cancelPress();
+    if (!this.interactive() || event.pointerType === 'mouse') return;
+    const cell = cellUnder(event);
+    if (cell === null) return;
+    this.pressFrom = { x: event.clientX, y: event.clientY };
+    this.pressTimer = setTimeout(() => {
+      this.pressTimer = null;
+      this.pressAnswered = true;
+      this.rotateRequest.emit(cell);
+    }, LONG_PRESS);
+  }
+
+  protected onPressMove(event: PointerEvent): void {
+    const from = this.pressFrom;
+    if (this.pressTimer === null || !from) return;
+    if (Math.abs(event.clientX - from.x) > PRESS_SLOP || Math.abs(event.clientY - from.y) > PRESS_SLOP) {
+      this.cancelPress();
+    }
+  }
+
+  protected onPressEnd(): void {
+    this.cancelPress();
+  }
+
+  private cancelPress(): void {
+    if (this.pressTimer !== null) clearTimeout(this.pressTimer);
+    this.pressTimer = null;
+    this.pressFrom = null;
   }
 
   /**
@@ -189,8 +245,11 @@ export class BoardGrid {
   protected onContext(event: MouseEvent): void {
     if (!this.interactive()) return;
     event.preventDefault();
-    const square = (event.target as HTMLElement | null)?.closest<HTMLElement>('[data-cell]');
-    this.rotateRequest.emit(square ? Number(square.dataset['cell']) : -1);
+    // Android raises this menu on a long press, which is the gesture above: whichever
+    // of the two arrives first turns the ship, and the other one is spent here.
+    if (this.pressAnswered) return;
+    this.cancelPress();
+    this.rotateRequest.emit(cellUnder(event) ?? -1);
   }
 
   /**
@@ -224,6 +283,12 @@ export class BoardGrid {
     this.hoverIdx.set(i);
     this.cellEnter.emit(i);
   }
+}
+
+/** The square an event landed on, or null if it fell in the hairline between two. */
+function cellUnder(event: Event): number | null {
+  const square = (event.target as HTMLElement | null)?.closest<HTMLElement>('[data-cell]');
+  return square ? Number(square.dataset['cell']) : null;
 }
 
 /**

@@ -80,6 +80,28 @@ h1 {
   background: linear-gradient(270deg, rgba(201, 154, 62, 0.16), rgba(201, 154, 62, 0.03) 60%, transparent);
 }
 
+/* Stacked, the boards are taller than the screen, and the rail is where the game
+   answers you — whose move it is, what the last salvo did. Scrolled to a chart
+   you would be firing blind, so it pins to the top. The gradient fades to
+   transparent, hence the solid colour underneath it; the RTL rule is repeated
+   here because it sets `background` in full and would otherwise win. */
+@media (max-width: 819px) {
+  .rail,
+  :root[dir='rtl'] .rail {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    background-color: var(--abyss);
+  }
+
+  /* Anything scrolled to deliberately stops below the pinned rail rather than
+     under it — otherwise bringing the opponent's square into view hides its
+     first row behind the very line that announced the battle. */
+  .sea {
+    scroll-margin-top: 4rem;
+  }
+}
+
 .rail__turn {
   font-family: var(--data);
   font-size: 11px;
@@ -188,6 +210,16 @@ h1 {
 }
 .phase-deploy .sea--away {
   order: 2;
+}
+
+/* Stacked, the opponent's square is a screen of empty water between your chart
+   and the rack you are actually working in — and until the fleet is at sea there
+   is nothing to do in it and nothing to read off it. So while deploying it waits
+   its turn. From 820 px the charts stand side by side and it costs nothing. */
+@media (max-width: 819px) {
+  .phase-deploy .sea--away {
+    display: none;
+  }
 }
 
 @media (min-width: 820px) {

@@ -29,6 +29,10 @@
     role="grid"
     [attr.aria-label]="caption()"
     (pointerleave)="onLeave()"
+    (pointerdown)="onPressStart($event)"
+    (pointermove)="onPressMove($event)"
+    (pointerup)="onPressEnd()"
+    (pointercancel)="onPressEnd()"
     (contextmenu)="onContext($event)"
     (keydown)="onKey($event)"
   >

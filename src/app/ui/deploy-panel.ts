@@ -45,7 +45,11 @@ import { ShipGlyph } from './ship-glyph';
         </button>
       </div>
 
-      <p class="hint">{{ i18n.t('deploy.hint') }}</p>
+      <!-- Two wordings of the same instruction, and the input decides which one is
+           true: a phone has no pointer to move and no second mouse button. Only
+           one is ever in the document, so a screen reader hears one of them. -->
+      <p class="hint hint--pointer">{{ i18n.t('deploy.hint') }}</p>
+      <p class="hint hint--touch">{{ i18n.t('deploy.hint.touch') }}</p>
     </section>
 
     <section class="block">
@@ -186,6 +190,19 @@ import { ShipGlyph } from './ship-glyph';
       font-size: 12.5px;
       line-height: 1.42;
       color: rgba(197, 216, 224, 0.6);
+    }
+    .hint--touch {
+      display: none;
+    }
+    /* A coarse pointer is a finger: no hover, no right button, and a long press
+       to turn a ship instead. */
+    @media (pointer: coarse) {
+      .hint--pointer {
+        display: none;
+      }
+      .hint--touch {
+        display: block;
+      }
     }
     .levels {
       display: flex;

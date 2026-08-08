@@ -9,7 +9,8 @@
     "watch": "ng build --watch --configuration development",
     "test": "node scripts/test.mjs",
     "test:coverage": "node scripts/test.mjs --gate",
-    "test:sim": "node scripts/simulate.mjs"
+    "test:sim": "node scripts/simulate.mjs",
+    "shots": "node e2e/mobile.mjs"
   },
   "private": true,
   "packageManager": "npm@12.0.1",
@@ -28,6 +29,7 @@
     "@angular/cli": "^22.1.2",
     "@angular/compiler-cli": "^22.1.0",
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.62.1",
     "@types/node": "^26.1.2",
     "@vitest/coverage-v8": "^4.1.10",
     "angular-eslint": "22.1.0",

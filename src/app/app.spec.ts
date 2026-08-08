@@ -113,6 +113,58 @@ describe('App', () => {
     });
   });
 
+  /**
+   * Stacked on a phone the opponent's square starts a screen below the rack the
+   * player has just pressed "to battle" in. jsdom implements neither
+   * `scrollIntoView` nor a layout to measure, so both are stood in for here.
+   */
+  describe('the move to battle', () => {
+    let scrolled: Element[];
+
+    const watchScrolling = () => {
+      scrolled = [];
+      Object.defineProperty(Element.prototype, 'scrollIntoView', {
+        value: function (this: Element) {
+          scrolled.push(this);
+        },
+        configurable: true,
+      });
+    };
+
+    const pageIsTallerThanTheScreen = (tall: boolean) =>
+      Object.defineProperty(document.documentElement, 'scrollHeight', {
+        value: tall ? window.innerHeight * 3 : 0,
+        configurable: true,
+      });
+
+    beforeEach(watchScrolling);
+
+    afterEach(() => {
+      Reflect.deleteProperty(Element.prototype, 'scrollIntoView');
+      Reflect.deleteProperty(document.documentElement, 'scrollHeight');
+    });
+
+    it("brings the opponent's square into view once there is something to fire at", () => {
+      pageIsTallerThanTheScreen(true);
+      render();
+      store.autoPlace();
+      store.beginBattle();
+      fixture.detectChanges();
+
+      expect(scrolled).toEqual([fixture.nativeElement.querySelector('.sea--away')]);
+    });
+
+    it('leaves the page alone where both charts already stand side by side', () => {
+      pageIsTallerThanTheScreen(false);
+      render();
+      store.autoPlace();
+      store.beginBattle();
+      fixture.detectChanges();
+
+      expect(scrolled).toEqual([]);
+    });
+  });
+
   describe('battle', () => {
     const toBattle = (seed = 2024) => {
       render(seed);

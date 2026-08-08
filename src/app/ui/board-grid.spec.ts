@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Board, emptyBoard } from '../domain/board';
 import { CELLS, idx } from '../domain/grid';
 import { canonicalBoard, shipCells, withShip } from '../domain/placement';
@@ -192,6 +192,122 @@ describe('BoardGrid', () => {
         .dispatchEvent(new MouseEvent('contextmenu', { cancelable: true, bubbles: true }));
 
       expect(asked).toBe(0);
+    });
+  });
+
+  /**
+   * A touch screen has no second mouse button, so a finger held on a square does
+   * what the right one does. jsdom has no `PointerEvent`, and the handlers read
+   * only `pointerType` and the coordinates — so a `MouseEvent` carrying the one
+   * missing field is the honest stand-in.
+   */
+  describe('a finger on the chart', () => {
+    const finger = (
+      target: Element,
+      type: string,
+      at: { x?: number; y?: number } = {},
+      pointerType = 'touch',
+    ) => {
+      const event = new MouseEvent(type, {
+        bubbles: true,
+        cancelable: true,
+        clientX: at.x ?? 0,
+        clientY: at.y ?? 0,
+      });
+      Object.defineProperty(event, 'pointerType', { value: pointerType });
+      target.dispatchEvent(event);
+      return event;
+    };
+
+    beforeEach(() => vi.useFakeTimers());
+    afterEach(() => vi.useRealTimers());
+
+    it('a finger held on a square asks to turn what is on it', () => {
+      render(emptyBoard('player'), { interactive: true });
+      const asked: number[] = [];
+      fixture.componentInstance.rotateRequest.subscribe((cell) => asked.push(cell));
+
+      finger(cellButtons(fixture)[idx(3, 7)], 'pointerdown');
+      vi.advanceTimersByTime(500);
+
+      expect(asked).toEqual([idx(3, 7)]);
+    });
+
+    it('the tap that ends a long press places nothing — one gesture, one order', () => {
+      render(emptyBoard('player'), { interactive: true });
+      const picked: number[] = [];
+      fixture.componentInstance.cellPick.subscribe((cell) => picked.push(cell));
+
+      const square = cellButtons(fixture)[idx(3, 7)];
+      finger(square, 'pointerdown');
+      vi.advanceTimersByTime(500);
+      finger(square, 'pointerup');
+      square.click();
+
+      expect(picked).toEqual([]);
+    });
+
+    it('a short press is still a tap, and places', () => {
+      render(emptyBoard('player'), { interactive: true });
+      const picked: number[] = [];
+      fixture.componentInstance.cellPick.subscribe((cell) => picked.push(cell));
+
+      const square = cellButtons(fixture)[idx(3, 7)];
+      finger(square, 'pointerdown');
+      vi.advanceTimersByTime(200);
+      finger(square, 'pointerup');
+      square.click();
+
+      expect(picked).toEqual([idx(3, 7)]);
+    });
+
+    it('a press that wanders is a scroll, not a turn', () => {
+      render(emptyBoard('player'), { interactive: true });
+      const asked: number[] = [];
+      fixture.componentInstance.rotateRequest.subscribe((cell) => asked.push(cell));
+
+      const square = cellButtons(fixture)[idx(3, 7)];
+      finger(square, 'pointerdown', { x: 100, y: 100 });
+      finger(square, 'pointermove', { x: 100, y: 140 });
+      vi.advanceTimersByTime(600);
+
+      expect(asked).toEqual([]);
+    });
+
+    it('the mouse is left to its own button', () => {
+      render(emptyBoard('player'), { interactive: true });
+      const asked: number[] = [];
+      fixture.componentInstance.rotateRequest.subscribe((cell) => asked.push(cell));
+
+      finger(cellButtons(fixture)[idx(3, 7)], 'pointerdown', {}, 'mouse');
+      vi.advanceTimersByTime(600);
+
+      expect(asked).toEqual([]);
+    });
+
+    /** Android answers the same long press with a context menu of its own. */
+    it('the menu that follows a long press does not turn the ship a second time', () => {
+      render(emptyBoard('player'), { interactive: true });
+      const asked: number[] = [];
+      fixture.componentInstance.rotateRequest.subscribe((cell) => asked.push(cell));
+
+      const square = cellButtons(fixture)[idx(3, 7)];
+      finger(square, 'pointerdown');
+      vi.advanceTimersByTime(500);
+      square.dispatchEvent(new MouseEvent('contextmenu', { cancelable: true, bubbles: true }));
+
+      expect(asked).toEqual([idx(3, 7)]);
+    });
+
+    it('on an inactive board a held finger asks for nothing', () => {
+      render(emptyBoard('player'), { interactive: false });
+      const asked: number[] = [];
+      fixture.componentInstance.rotateRequest.subscribe((cell) => asked.push(cell));
+
+      finger(cellButtons(fixture)[idx(3, 7)], 'pointerdown');
+      vi.advanceTimersByTime(600);
+
+      expect(asked).toEqual([]);
     });
   });
 

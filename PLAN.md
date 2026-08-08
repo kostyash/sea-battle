@@ -103,7 +103,7 @@ put off.
       entries on this list closed themselves in phase 6: the "к" key is now one
       of three rotate keys and is under test, and the word forms
       "корабль/корабля/кораблей" are decided by `Intl.PluralRules`.
-- [ ] The mobile layout has only been checked by squeezing the container down to
+- [x] The mobile layout has only been checked by squeezing the container down to
       340 px: a real narrow screen could not be opened during the session. Worth
       a look on an actual phone. The one-screen rule of phase 6 deliberately
       starts at 1180 px and leaves narrow screens scrolling.
@@ -545,3 +545,37 @@ put off.
   `npm run test:sim` — Admiral 55.16 < Midshipman 57.05 < Cabin Boy 63.10, the
   mooring worth +3.38 ± 0.83 salvos, every figure identical to the run before the
   change, which is the point of a cosmetic pass.
+- Open items, the narrow screen: it was finally looked at rather than guessed at.
+  `@playwright/test` joins the devDependencies and `e2e/mobile.mjs` walks the whole
+  game — empty chart, drawn lots, first salvos — at four phone widths, writing a
+  screenshot of each phase and reporting what the page logged and anything crossing
+  the viewport's edge. `npm run shots`, by hand, not in CI: it needs the app served
+  and a browser downloaded, and the layout does not move often enough to pay that
+  on every push.
+  Nothing was broken: no page errors at any width, and no sideways scroll — the
+  `sweep` and one contour path do cross the edge, but their container clips them.
+  What was wrong was what stood where. Deploying, the opponent's empty square sat
+  between your chart and the rack, a screen of water to scroll past before reaching
+  the only controls that do anything; below 820 px it now waits its turn, and the
+  deployment screen went from 1666 px to 1305 px on an iPhone SE.
+  Three more, on the same principle of showing a thing when it is wanted: the status
+  rail pins to the top while stacked, since scrolled to a chart you cannot see whose
+  move it is; pressing "to battle" brings the opponent's square into view itself,
+  with `scroll-margin-top` so the rail does not sit on the row it just delivered;
+  and a finger held on a square for half a second turns what is under it. That last
+  one is a real gap closed rather than a nicety — `rotateAt` hung off the right
+  mouse button and the `R` key, and a phone has neither, so a ship already on the
+  chart could not be turned at all. A press that wanders past 10 px is a scroll and
+  is left alone, Android's own context menu on the same press is spent rather than
+  obeyed, and the tap that ends the press does not also place a ship. The panel's
+  instruction is now written twice, with `(pointer: coarse)` choosing.
+  One trap worth recording, because it cost half the pass: a full-page screenshot
+  makes Chromium resize the viewport, and the mobile emulation goes with it —
+  `(pointer: coarse)` reads false afterwards, so every picture shows the mouse
+  wording no matter what the phone would do. The screenshots were accusing the CSS
+  of a fault that was in the camera. The script now measures the wording before the
+  shutter and prints it: touch on all four profiles.
+  `npm run lint` clean, build exit 0 with no warnings, `npm test -- --run` —
+  414/414 (nine new: seven on the held finger, two on the scroll into view, both
+  seen red by mutation first), coverage gate green at 95.39% statements / 94.52%
+  branches. `npm run test:sim` not run: nothing under `ai/` moved.
