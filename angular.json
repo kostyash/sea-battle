@@ -85,14 +85,16 @@
             "tsConfig": "tsconfig.spec.json",
             "runner": "vitest",
             "runnerConfig": "vitest.config.ts",
+            "setupFiles": [
+              "src/test-setup.ts"
+            ],
             "coverage": true,
             "coverageInclude": [
               "src/app/**/*.ts"
             ],
             "coverageExclude": [
               "src/app/**/*.spec.ts",
-              "src/app/**/*.test.ts",
-              "src/testing/**"
+              "src/app/**/*.test.ts"
             ],
             "coverageReporters": [
               "text-summary",

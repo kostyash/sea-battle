@@ -21,8 +21,6 @@ describe('the language switch', () => {
   let i18n: I18n;
 
   beforeEach(() => {
-    TestBed.resetTestingModule();
-    localStorage.clear();
     TestBed.configureTestingModule({});
     i18n = TestBed.inject(I18n);
     fixture = TestBed.createComponent(LangSwitch);

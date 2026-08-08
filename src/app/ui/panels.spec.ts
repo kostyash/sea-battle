@@ -23,13 +23,6 @@ const ROW_LETTERS = { en: 'ABCDEFGHIJ', ru: 'АБВГДЕЖЗИК' } as const;
 const coord = (cell: number, lang: keyof typeof ROW_LETTERS): string =>
   `${ROW_LETTERS[lang][Math.floor(cell / 10)]}${(cell % 10) + 1}`;
 
-/**
- * `resetTestingModule` builds a fresh injector but leaves jsdom's storage alone,
- * and `setLang` writes the choice to `sb.lang`. Without wiping it a test that
- * switched language would decide the language of every test after it.
- */
-const forget = (): void => localStorage.clear();
-
 const setup = (seed = 4242): GameStore => {
   TestBed.configureTestingModule({ providers: [{ provide: GAME_SEED, useValue: seed }] });
   return TestBed.inject(GameStore);
@@ -40,8 +33,6 @@ describe('fleet roster', () => {
   let fixture: ComponentFixture<DeployPanel>;
 
   beforeEach(() => {
-    TestBed.resetTestingModule();
-    forget();
     store = setup();
     fixture = TestBed.createComponent(DeployPanel);
     fixture.detectChanges();
@@ -142,8 +133,6 @@ describe('report and firing log', () => {
 
   beforeEach(() => {
     vi.useFakeTimers();
-    TestBed.resetTestingModule();
-    forget();
     store = setup(31);
     store.autoPlace();
     store.beginBattle();
@@ -212,8 +201,6 @@ describe('the result card', () => {
 
   beforeEach(() => {
     vi.useFakeTimers();
-    TestBed.resetTestingModule();
-    forget();
     store = setup(3);
     store.autoPlace();
     store.beginBattle();
@@ -344,15 +331,12 @@ describe('the panels speak whichever language is chosen', () => {
 
   beforeEach(() => {
     vi.useFakeTimers();
-    TestBed.resetTestingModule();
-    forget();
     store = setup(31);
     i18n = TestBed.inject(I18n);
   });
 
   afterEach(() => {
     vi.useRealTimers();
-    forget();
   });
 
   it('redraws the deployment panel in Russian — no label is left behind in English', () => {

@@ -37,16 +37,6 @@ describe('BoardGrid', () => {
 
   const speak = (lang: Lang) => TestBed.inject(I18n).setLang(lang);
 
-  beforeEach(() => {
-    // `setLang` remembers the choice in localStorage and the i18n effect stamps
-    // lang/dir onto <html>; `resetTestingModule` clears neither, so without this
-    // a language test would leak into whichever test runs next.
-    localStorage.clear();
-    document.documentElement.removeAttribute('lang');
-    document.documentElement.removeAttribute('dir');
-    TestBed.resetTestingModule();
-  });
-
   describe('the grid', () => {
     it('draws all one hundred cells', () => {
       render(emptyBoard('player'));

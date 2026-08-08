@@ -3,7 +3,11 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "types": ["vitest/globals", "node"]
+    /* No `vitest/globals`: every spec imports `describe`/`it`/`expect` by name,
+       and leaving the ambient types out makes an accidental global fail to compile
+       rather than fail at run time. `node` is needed — a few tests read sources
+       off disk. */
+    "types": ["node"]
   },
-  "include": ["src/**/*.d.ts", "src/**/*.spec.ts"]
+  "include": ["src/**/*.d.ts", "src/**/*.spec.ts", "src/test-setup.ts"]
 }

@@ -147,13 +147,22 @@ v22 — and reactive forms only if something makes those impossible.
 ## Tests
 
 Vitest through `@angular/build:unit-test`, jsdom. `*.spec.ts` sits next to what
-it tests.
+it tests. **`TESTING.md` is the full account** — the rig, the zoneless TestBed,
+what resets itself and what does not. Read it before writing a spec; the
+`writing-tests` skill carries the short form.
+
+The ones that catch people out:
 
 - A guard test proves nothing until it has been seen red. When adding one,
   mutate the code it guards, watch it fail, then put the code back.
 - Beware assertions that cannot fail: `computed` memoises, so "asking twice
   gives the same answer" is vacuous. Compare a thing that was asked against one
   that was not.
+- `await fixture.whenStable()` never resolves under `vi.useFakeTimers()`, and
+  most component specs here use fake timers. Those keep `fixture.detectChanges()`.
+- The runner resets the TestBed between tests — never write
+  `TestBed.resetTestingModule()` in a `beforeEach`. Storage and the `<html>`
+  attributes it does not reset are swept by `src/test-setup.ts`.
 - Property-based tests walk thousands of boards; `testTimeout` is 15 s because
   the CI runner is about three times slower than the laptop. That is honest CPU
   work, not a hang.

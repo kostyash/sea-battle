@@ -89,8 +89,6 @@ const service = (): AudioService => {
 
 describe('AudioService', () => {
   beforeEach(() => {
-    TestBed.resetTestingModule();
-    localStorage.clear();
     FakeCtx.created = 0;
     vi.stubGlobal('AudioContext', FakeCtx);
   });

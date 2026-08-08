@@ -81,6 +81,7 @@ once the DOM tests are in. The red gate is recorded in the journal, not hidden.
 
 - [x] Remove the replay of the Admiral's reckoning: it confused more than it told
 - [x] Bring the code up to the v22 conventions the CLI's MCP server states
+- [x] Audit the vitest rig against v22, write `TESTING.md` and a `writing-tests` skill
 
 ## Open items (next pass)
 
@@ -430,3 +431,34 @@ put off.
   Build exit 0 with no warnings, `npm test -- --run` — 406/406, coverage gate
   green at 95.38% of statements / 95.14% of branches. `npm run test:sim` not run:
   nothing under `ai/` moved, and neither did the store's use of it.
+- Phase 7, item 3: the test rig audited against what Angular v22 actually
+  prescribes, and the findings written down rather than remembered. The rig
+  itself was already the standard one — `@angular/build:unit-test` with vitest in
+  jsdom, `runnerConfig` a documented option — so nothing structural moved. Four
+  things did.
+  `TestBed.resetTestingModule()` came out of eleven `beforeEach` blocks: the
+  builder registers `beforeEach(getCleanupHook(false))` / `afterEach(getCleanupHook(true))`
+  and that hook resets the TestBed itself. Proven with a throwaway spec whose two
+  tests each configure the module from scratch — without a reset between them the
+  second would throw. The three resets that sit *inside* a test stayed: that is
+  how a test builds a second injector to compare against the first.
+  A global setup file, `src/test-setup.ts`, declared as `setupFiles` on the test
+  target — the builder overwrites the runner's own `setupFiles`, so the vitest
+  config is the wrong place for it. It sweeps what the TestBed reset never
+  touches: `localStorage` and the `lang`/`dir` the i18n effect stamps on `<html>`.
+  The per-file copies of that cleanup are gone. Seen red as the rules demand:
+  disarm the hook and four spec files fail on language leaking between tests.
+  `vitest/globals` left `tsconfig.spec.json` — all 22 specs import `describe`/`it`
+  by name, and dropping the ambient types makes an accidental global fail to
+  compile. A dead `src/testing/**` came out of `coverageExclude`.
+  What did *not* change: `fixture.detectChanges()`. Angular prefers
+  `await fixture.whenStable()`, and says converting an existing suite is likely
+  not worth it — but there is a harder reason, measured rather than assumed:
+  under `vi.useFakeTimers()` `whenStable()` never resolves and dies on the 15 s
+  timeout, while the same component settles in ~50 ms on real timers. Most
+  component specs here run on fake timers because the store lives on `PAUSE`.
+  That, and everything else worth knowing, is now in `TESTING.md`, with a
+  `writing-tests` skill carrying the short form to whoever touches a spec.
+  Build exit 0 with no warnings, `npm test -- --run` — 406/406, coverage gate
+  green at 95.38% of statements / 95.14% of branches. `npm run test:sim` not run:
+  nothing under `ai/` moved.
