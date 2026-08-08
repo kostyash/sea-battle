@@ -1,5 +1,6 @@
 import { CellState } from '../domain/board';
-import { CELLS, SIZE, colOf, idx, inBounds, rowOf } from '../domain/grid';
+import { CELLS, SIZE, idx } from '../domain/grid';
+import { walkAura } from '../domain/placement';
 import { Rng } from '../domain/rng';
 
 /**
@@ -21,7 +22,7 @@ const WOUND_WEIGHT = 24;
 export function densityMap(
   shots: readonly CellState[],
   afloat: readonly number[],
-): { score: number[]; mustFinish: boolean } {
+): number[] {
   const wounded = shots.some((s) => s === 'hit');
   const score = new Array<number>(CELLS).fill(0);
 
@@ -59,7 +60,7 @@ export function densityMap(
     }
   }
 
-  return { score, mustFinish: wounded };
+  return score;
 }
 
 /**
@@ -72,7 +73,7 @@ export function densityShot(
   open: readonly number[],
   rng: Rng,
 ): number {
-  const { score } = densityMap(shots, afloat);
+  const score = densityMap(shots, afloat);
 
   let top = 0;
   const ties: number[] = [];
@@ -91,19 +92,6 @@ export function densityShot(
 
 /** Whether an open hit the candidate hull does not cover sits next to it. */
 export function touchesForeignHit(shots: readonly CellState[], span: readonly number[]): boolean {
-  const own = new Set(span);
-  for (const c of span) {
-    const r = rowOf(c);
-    const k = colOf(c);
-    for (let dr = -1; dr <= 1; dr++) {
-      for (let dk = -1; dk <= 1; dk++) {
-        const nr = r + dr;
-        const nk = k + dk;
-        if (!inBounds(nr, nk)) continue;
-        const n = idx(nr, nk);
-        if (!own.has(n) && shots[n] === 'hit') return true;
-      }
-    }
-  }
-  return false;
+  // the ring a ship would claim is exactly where no other ship's hit may lie
+  return walkAura(span, (n) => shots[n] === 'hit');
 }

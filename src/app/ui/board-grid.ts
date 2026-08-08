@@ -88,8 +88,6 @@ export class BoardGrid {
     return ships.filter(isSunk);
   });
 
-  protected readonly ghostCells = computed(() => new Set(this.ghost()?.cells ?? []));
-
   protected readonly crosshair = computed(() => {
     const h = this.hoverIdx();
     if (h === null || !this.interactive()) return null;
@@ -130,9 +128,7 @@ export class BoardGrid {
   }
 
   protected glyphStyle(ship: Ship): Record<string, string> {
-    return ship.orient === 'v'
-      ? { width: `${ship.size * 100}%`, height: `${100 / ship.size}%` }
-      : { width: '100%', height: '100%' };
+    return glyphBox(ship.size, ship.orient);
   }
 
   protected ghostStyle(): Record<string, string> {
@@ -144,11 +140,8 @@ export class BoardGrid {
 
   protected ghostGlyphStyle(): Record<string, string> {
     const g = this.ghost();
-    if (!g) return {};
-    const n = g.cells.length || 1;
-    return g.orient === 'v'
-      ? { width: `${n * 100}%`, height: `${100 / n}%` }
-      : { width: '100%', height: '100%' };
+    // a silhouette clipped at the edge still draws the whole ship
+    return g ? glyphBox(g.cells.length || 1, g.orient) : {};
   }
 
   protected splashStyle(cell: number): Record<string, string> {
@@ -231,6 +224,16 @@ export class BoardGrid {
     this.hoverIdx.set(i);
     this.cellEnter.emit(i);
   }
+}
+
+/**
+ * The glyph inside a hull. A vertical ship is the same drawing turned a quarter
+ * turn by CSS, so its box is measured before the turn — width and height swap.
+ */
+function glyphBox(size: number, orient: 'h' | 'v'): Record<string, string> {
+  return orient === 'v'
+    ? { width: `${size * 100}%`, height: `${100 / size}%` }
+    : { width: '100%', height: '100%' };
 }
 
 /** A rectangle N cells long, in percentages of the 10×10 square. */

@@ -42,7 +42,7 @@ let exposure: readonly number[] | null = null;
 export function exposureMap(): readonly number[] {
   if (!exposure) {
     const blank: CellState[] = new Array<CellState>(CELLS).fill('unknown');
-    exposure = densityMap(blank, ALL_SIZES).score;
+    exposure = densityMap(blank, ALL_SIZES);
   }
   return exposure;
 }

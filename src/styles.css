@@ -7,23 +7,17 @@
   /* water */
   --abyss: #071119;
   --abyss-2: #0b1b26;
-  --abyss-3: #0f2634;
-  --prussian: #143950;
-  --prussian-2: #1e5573;
 
   /* paper */
   --chart: #ddd3b7;
   --chart-2: #cabd99;
-  --chart-3: #b7a87f;
   --sepia: #8a7a55;
   --ink: #14384f;
-  --ink-soft: rgba(20, 56, 79, 0.34);
 
   /* signals */
   --signal: #e0472b;
   --signal-glow: #ff7a4d;
   --brass: #c99a3e;
-  --brass-dim: #7d6128;
   --foam: #9fd9e3;
 
   --paper-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");

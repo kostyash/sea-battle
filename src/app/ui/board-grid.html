@@ -64,7 +64,6 @@
             [class.miss]="state(i) === 'miss'"
             [class.hit]="state(i) === 'hit'"
             [class.sunk]="state(i) === 'sunk'"
-            [class.ghosted]="ghostCells().has(i)"
             [class.cross]="isCross(i)"
             [class.inert]="!interactive()"
             [attr.aria-disabled]="!interactive()"

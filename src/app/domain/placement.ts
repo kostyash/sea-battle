@@ -40,10 +40,20 @@ export function clippedCells(
   return cells;
 }
 
-/** The ring around a ship, diagonals included: nothing may stand there. */
-export function aura(cells: readonly number[]): number[] {
+/**
+ * Walks the ring around a hull, diagonals included and the hull's own cells
+ * skipped. A cell may be offered more than once — two hull cells share corners.
+ *
+ * `visit` returning true stops the walk, and so does this function: that is how
+ * a caller asks "is there one of *those* alongside?" without building the ring
+ * first. The Admiral tries every hull placement on the board against every shot,
+ * so the ring is walked often enough for the allocation to show up on the clock.
+ */
+export function walkAura(
+  cells: readonly number[],
+  visit: (cell: number) => boolean | void,
+): boolean {
   const own = new Set(cells);
-  const ring = new Set<number>();
   for (const c of cells) {
     const r = rowOf(c);
     const k = colOf(c);
@@ -53,10 +63,19 @@ export function aura(cells: readonly number[]): number[] {
         const nk = k + dk;
         if (!inBounds(nr, nk)) continue;
         const n = idx(nr, nk);
-        if (!own.has(n)) ring.add(n);
+        if (!own.has(n) && visit(n)) return true;
       }
     }
   }
+  return false;
+}
+
+/** The ring around a ship, diagonals included: nothing may stand there. */
+export function aura(cells: readonly number[]): number[] {
+  const ring = new Set<number>();
+  walkAura(cells, (n) => {
+    ring.add(n);
+  });
   return [...ring];
 }
 

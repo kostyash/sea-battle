@@ -6,7 +6,7 @@ import { Difficulty } from '../ai/levels';
 import { AudioService } from './audio';
 import { Board, ShotResult, emptyBoard } from '../domain/board';
 import { FLEET_SHIPS, FLEET_SPEC, isSunk } from '../domain/fleet';
-import { Orientation, SIZE, Side } from '../domain/grid';
+import { Orientation, SIZE, Side, colOf, rowOf } from '../domain/grid';
 import {
   canPlace,
   clippedCells,
@@ -15,7 +15,7 @@ import {
   withoutShipAt,
 } from '../domain/placement';
 import { entropySeed, seededRng } from '../domain/rng';
-import { afloatSizes, fire, isFleetDestroyed } from '../domain/shot';
+import { FireOutcome, afloatSizes, fire, isFleetDestroyed } from '../domain/shot';
 import { I18n } from '../i18n/i18n';
 import { MsgKey } from '../i18n/en';
 import { Msg } from '../i18n/phrase';
@@ -105,8 +105,8 @@ export class GameStore {
   readonly message = signal<Msg<MsgKey>>({ key: 'msg.deploy' });
   readonly messageText = computed(() => this.i18n.say(this.message()));
 
+  /** Only your own salvos are counted: the result card never quotes the opponent's aim. */
   private readonly playerTally = signal<Tally>({ shots: 0, hits: 0 });
-  private readonly enemyTally = signal<Tally>({ shots: 0, hits: 0 });
 
   /* ── deployment ─────────────────────────────────────────────────────── */
 
@@ -130,8 +130,8 @@ export class GameStore {
     const cell = this.hover();
     const size = this.pickedSize();
     if (cell === null || size === null) return null;
-    const row = Math.floor(cell / 10);
-    const col = cell % 10;
+    const row = rowOf(cell);
+    const col = colOf(cell);
     const orient = this.orient();
     const valid = canPlace(this.player(), row, col, size, orient);
     const full = shipCells(row, col, size, orient);
@@ -141,7 +141,6 @@ export class GameStore {
   /* ── the battle summary ─────────────────────────────────────────────── */
 
   readonly playerStats = computed(() => summarise(this.playerTally()));
-  readonly enemyStats = computed(() => summarise(this.enemyTally()));
   readonly enemyLosses = computed(() => this.enemy().ships.filter(isSunk).length);
   readonly playerLosses = computed(() => this.player().ships.filter(isSunk).length);
   readonly enemyDecksLeft = computed(() =>
@@ -253,8 +252,8 @@ export class GameStore {
       return;
     }
 
-    const row = Math.floor(cell / 10);
-    const col = cell % 10;
+    const row = rowOf(cell);
+    const col = colOf(cell);
     if (!canPlace(board, row, col, size, this.orient())) {
       this.message.set({ key: 'msg.noRoom' });
       return;
@@ -309,14 +308,12 @@ export class GameStore {
 
     this.busy.set(true);
     const era = this.era;
-    const outcome = fire(board, cell);
+    const outcome = this.salvo('player', board, cell);
     this.enemy.set(outcome.board);
     this.playerTally.update((t) => ({
       shots: t.shots + 1,
       hits: t.hits + (outcome.result === 'miss' ? 0 : 1),
     }));
-    this.record('player', cell, outcome.result, outcome.result === 'sunk' ? outcome.ship!.size : null);
-    this.report(cell, outcome.result);
 
     // the message is written before the check for a destroyed fleet: the
     // deciding salvo has to be called out too
@@ -354,14 +351,8 @@ export class GameStore {
       return;
     }
 
-    const outcome = fire(board, cell);
+    const outcome = this.salvo('enemy', board, cell);
     this.player.set(outcome.board);
-    this.enemyTally.update((t) => ({
-      shots: t.shots + 1,
-      hits: t.hits + (outcome.result === 'miss' ? 0 : 1),
-    }));
-    this.record('enemy', cell, outcome.result, outcome.result === 'sunk' ? outcome.ship!.size : null);
-    this.report(cell, outcome.result, 'enemy');
 
     if (outcome.result !== 'miss') {
       this.message.set(
@@ -417,7 +408,6 @@ export class GameStore {
     this.log.set([]);
     this.splash.set(null);
     this.playerTally.set({ shots: 0, hits: 0 });
-    this.enemyTally.set({ shots: 0, hits: 0 });
     this.pickedSize.set(4);
     this.orient.set('h');
     this.hover.set(null);
@@ -437,6 +427,18 @@ export class GameStore {
     this.pickedSize.set(next ? next.size : null);
   }
 
+  /**
+   * A shot from either side. Resolving it, writing the line and raising the
+   * splash is the same work whoever fired; only what the outcome means for the
+   * turn differs, and that is left to the caller.
+   */
+  private salvo(side: Side, board: Board, cell: number): FireOutcome {
+    const outcome = fire(board, cell);
+    this.record(side, cell, outcome.result, outcome.result === 'sunk' ? outcome.ship!.size : null);
+    this.report(side, cell, outcome.result);
+    return outcome;
+  }
+
   private record(side: Side, cell: number, result: ShotResult, size: number | null): void {
     const entry: LogEntry = {
       id: this.logSeq++,
@@ -448,7 +450,7 @@ export class GameStore {
     this.log.update((l) => [entry, ...l].slice(0, 60));
   }
 
-  private report(cell: number, result: ShotResult, side: Side = 'player'): void {
+  private report(side: Side, cell: number, result: ShotResult): void {
     this.splash.set({ id: this.splashSeq++, side, cell, result });
     if (result === 'miss') this.audio.splash();
     else if (result === 'hit') this.audio.hit();

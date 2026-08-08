@@ -89,7 +89,7 @@ once the DOM tests are in. The red gate is recorded in the journal, not hidden.
 All the phases are closed, the gates are green. Below is what was deliberately
 put off.
 
-- [ ] Cosmetics from the review (nothing changes in behaviour, hence deferred):
+- [x] Cosmetics from the review (nothing changes in behaviour, hence deferred):
       unused tokens in `styles.css`; `enemyStats` in the store, which nobody
       reads; the `[class.ghosted]` binding with no rule in the CSS, together with
       `ghostCells`; `mustFinish` in `density.ts`, needed only by the tests;
@@ -517,3 +517,31 @@ put off.
   necessary and are not sufficient. Wait for the checks.
   `npm run lint` clean, build exit 0 with no warnings, `npm test -- --run` —
   406/406, coverage gate green at 95.38% / 95.14%.
+- Open items, the cosmetics: all eight, and one of them turned out not to be
+  cosmetic at all. Six dead tokens left `styles.css` — `--abyss-3`, `--prussian`,
+  `--prussian-2`, `--chart-3`, `--ink-soft`, `--brass-dim`. `enemyStats` went, and
+  with it `enemyTally`, which nothing else read: the opponent's aim is never
+  quoted anywhere. The `[class.ghosted]` binding and its `ghostCells` set went —
+  there has never been a rule for that class. `mustFinish` left `density.ts`, so
+  `densityMap` now returns the map itself rather than a wrapper with one field
+  worth reading; sixteen call sites in the specs got shorter, and the test that
+  asserted only `mustFinish` is gone, hence 405 and not 406. `rowOf`/`colOf`
+  replaced the hand-written `Math.floor(cell / 10)` in the store's two places —
+  the one in `panels.spec.ts` stays, a test that re-derives the label instead of
+  trusting the code under test is doing its job. `glyphStyle` and
+  `ghostGlyphStyle` now share a `glyphBox` helper, next to `patch`. `fireAt` and
+  `enemyVolley` share a `salvo()`: fire, write the line, raise the splash — what
+  the outcome means for the turn stays with each caller.
+  The eighth was `touchesForeignHit` repeating the eight-neighbourhood walk from
+  `aura`. Written the obvious way — `aura(span).some(...)` — the simulation went
+  from 8.43 s to 12.24 s, and it was measured rather than assumed: the Admiral
+  tries every placement against every shot, and two Sets and an array per
+  placement show up on the clock. So the walk itself was extracted instead of its
+  result: `walkAura(cells, visit)` in `placement.ts`, where a `visit` returning
+  true stops it. `aura` collects the ring, `touchesForeignHit` leaves on the first
+  foreign hit, neither allocates anything new. 8.16 s — back in the noise.
+  `npm run lint` clean, build exit 0 with no warnings, `npm test -- --run` —
+  405/405, coverage gate green at 95.46% statements / 95.01% branches.
+  `npm run test:sim` — Admiral 55.16 < Midshipman 57.05 < Cabin Boy 63.10, the
+  mooring worth +3.38 ± 0.83 salvos, every figure identical to the run before the
+  change, which is the point of a cosmetic pass.
