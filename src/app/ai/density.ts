@@ -30,7 +30,7 @@ export function densityMap(
 
   for (const [size, count] of bySize) {
     // a single-deck ship placed "vertically" is the same ship — don't count it twice
-    const orients: ReadonlyArray<readonly [number, number]> =
+    const orients: readonly (readonly [number, number])[] =
       size === 1 ? [[0, 1]] : [
         [0, 1],
         [1, 0],

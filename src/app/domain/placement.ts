@@ -99,8 +99,8 @@ export function withoutShipAt(board: Board, cell: number): Board {
 }
 
 /** Every legal placement of a ship of the given size on the current board. */
-export function legalSpots(board: Board, size: number): Array<[number, number, Orientation]> {
-  const spots: Array<[number, number, Orientation]> = [];
+export function legalSpots(board: Board, size: number): [number, number, Orientation][] {
+  const spots: [number, number, Orientation][] = [];
   for (let r = 0; r < SIZE; r++) {
     for (let c = 0; c < SIZE; c++) {
       if (canPlace(board, r, c, size, 'h')) spots.push([r, c, 'h']);
@@ -140,7 +140,7 @@ export function randomBoard(rng: Rng, owner: Side, attempts = 300): Board {
  * The fallback deployment, in case the random draw hits a dead end 300 times.
  * An empty board will not do here: a fleet of zero ships can never be sunk.
  */
-const CANONICAL: ReadonlyArray<[number, number, number, Orientation]> = [
+const CANONICAL: readonly [number, number, number, Orientation][] = [
   [0, 0, 4, 'h'],
   [0, 5, 3, 'h'],
   [2, 0, 3, 'h'],

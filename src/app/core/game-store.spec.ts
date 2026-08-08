@@ -2,9 +2,8 @@ import { TestBed } from '@angular/core/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Board } from '../domain/board';
 import { FLEET_SHIPS, TOTAL_DECKS } from '../domain/fleet';
-import { CELLS, SIZE, idx } from '../domain/grid';
+import { SIZE, idx } from '../domain/grid';
 import { canonicalBoard } from '../domain/placement';
-import { Difficulty } from '../ai/levels';
 import { GAME_SEED, GameStore, PAUSE } from './game-store';
 
 /**

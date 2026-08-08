@@ -21,6 +21,7 @@ Run from the repository root.
 | Command | What it is for |
 | --- | --- |
 | `npm start` | dev server on <http://localhost:4200> |
+| `npm run lint` | `angular-eslint` over `src/**/*.ts` and `src/**/*.html` |
 | `npm run build` | production build; must exit 0 **with no warnings** |
 | `npm test -- --run` | the whole suite, once (`--run` is mandatory — see below) |
 | `npm run test:coverage` | the same suite with the coverage thresholds switched on |
@@ -45,11 +46,12 @@ Run from the repository root.
 
 Every pass, in this order:
 
-1. `npm run build` — exit 0, no warnings
-2. `npm test -- --run` — everything green
-3. `npm run test:coverage` — ≥ 95% lines/branches on `src/app/domain/**`,
+1. `npm run lint` — clean; it is the fastest gate, so it goes first
+2. `npm run build` — exit 0, no warnings
+3. `npm test -- --run` — everything green
+4. `npm run test:coverage` — ≥ 95% lines/branches on `src/app/domain/**`,
    `src/app/ai/**` and `src/app/i18n/**`; ≥ 70% overall
-4. `npm run test:sim` — only when `src/app/ai/**` or the store's use of it
+5. `npm run test:sim` — only when `src/app/ai/**` or the store's use of it
    changed; it is slow and it asserts Admiral < Midshipman < Cabin Boy on mean
    salvos, plus the mooring being worth about +3.4 salvos
 
@@ -175,6 +177,13 @@ The ones that catch people out:
 - Comments explain *why*, not *what*, and only where the reason is not obvious
   from the code. Match the density already in the file.
 - Prettier is a devDependency; keep to the formatting already in place.
+- Linting is `angular-eslint` in `eslint.config.js` — the stock recommended set:
+  eslint recommended, typescript-eslint recommended + stylistic, Angular's
+  `tsRecommended`, and for templates `templateRecommended` plus
+  **`templateAccessibility`**. Do not weaken a rule to make a file pass. If a rule
+  is genuinely wrong about a piece of code, disable it on that line and write down
+  why — there is one such disable, on the grid's delegated `keydown`, and it says
+  what it is for.
 
 ## CI and deployment
 

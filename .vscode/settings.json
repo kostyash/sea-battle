@@ -1,0 +1,12 @@
+{
+  // The template rules live in the same flat config as the TypeScript ones, but
+  // the extension only looks at HTML if it is told to.
+  "eslint.validate": ["javascript", "typescript", "html"],
+  "eslint.useFlatConfig": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.formatOnSave": true,
+  "files.eol": "\n"
+}

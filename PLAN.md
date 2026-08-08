@@ -82,6 +82,7 @@ once the DOM tests are in. The red gate is recorded in the journal, not hidden.
 - [x] Remove the replay of the Admiral's reckoning: it confused more than it told
 - [x] Bring the code up to the v22 conventions the CLI's MCP server states
 - [x] Audit the vitest rig against v22, write `TESTING.md` and a `writing-tests` skill
+- [x] Put a linter on the deck: `angular-eslint` with the recommended set, in the gates and in CI
 
 ## Open items (next pass)
 
@@ -462,3 +463,29 @@ put off.
   Build exit 0 with no warnings, `npm test -- --run` — 406/406, coverage gate
   green at 95.38% of statements / 95.14% of branches. `npm run test:sim` not run:
   nothing under `ai/` moved.
+- Phase 7, item 4: a linter, at last. Angular keeps no lint guide of its own and
+  points at `angular-eslint`, so that is what went on — `ng add angular-eslint`,
+  version 22.1.0 against CLI 22, with the configuration exactly as the schematic
+  writes it: eslint recommended, typescript-eslint recommended and stylistic,
+  Angular's `tsRecommended`, and for templates `templateRecommended` plus
+  `templateAccessibility`. Nothing loosened to make the code pass.
+  It found eleven things on the first run. Six were style — `ReadonlyArray<T>`
+  and `Array<T>` where the preset wants `readonly T[]` and `T[]` — and `--fix`
+  took those. Four were dead imports the compiler had been happy to keep:
+  `randomBoard` in the store, left over from when the fleet started mooring
+  itself, and `CELLS`, `Difficulty` and `beforeEach` in two specs, left by this
+  very phase's own deletions. That is the linter earning its keep on the first
+  day, catching what a green suite cannot.
+  The eleventh is the interesting one. `interactive-supports-focus` flags the
+  chart's `<div role="grid">` because it carries `(keydown)` and no `tabindex`.
+  The rule reads one element at a time and cannot see the arrangement: focus
+  lives on the cells, which are real buttons with a roving tabindex, and the
+  container only ever receives an event that bubbled up from an already-focused
+  child. Handing the div a `tabindex` would be a decoration to quiet a linter, so
+  instead the rule is disabled on that line with the reasoning written above it.
+  `npm run lint` is now the first gate — it fails in seconds where the others
+  take minutes — and CI runs it before the tests. VS Code gets the ESLint,
+  Angular Language Service and Prettier extensions as workspace recommendations,
+  with the settings that make the extension read templates as well as TypeScript.
+  `npm run lint` clean, build exit 0 with no warnings, `npm test -- --run` —
+  406/406, coverage gate green at 95.38% / 95.14%.

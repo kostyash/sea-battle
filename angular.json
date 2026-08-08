@@ -2,7 +2,8 @@
   "$schema": "./node_modules/@angular/cli/lib/config/schema.json",
   "version": 1,
   "cli": {
-    "packageManager": "npm"
+    "packageManager": "npm",
+    "schematicCollections": ["angular-eslint"]
   },
   "newProjectRoot": "projects",
   "projects": {
@@ -49,10 +50,7 @@
                 "input": "public"
               }
             ],
-            "styles": [
-              "src/fonts.css",
-              "src/styles.css"
-            ]
+            "styles": ["src/fonts.css", "src/styles.css"]
           },
           "configurations": {
             "production": {
@@ -85,22 +83,11 @@
             "tsConfig": "tsconfig.spec.json",
             "runner": "vitest",
             "runnerConfig": "vitest.config.ts",
-            "setupFiles": [
-              "src/test-setup.ts"
-            ],
+            "setupFiles": ["src/test-setup.ts"],
             "coverage": true,
-            "coverageInclude": [
-              "src/app/**/*.ts"
-            ],
-            "coverageExclude": [
-              "src/app/**/*.spec.ts",
-              "src/app/**/*.test.ts"
-            ],
-            "coverageReporters": [
-              "text-summary",
-              "json-summary",
-              "html"
-            ]
+            "coverageInclude": ["src/app/**/*.ts"],
+            "coverageExclude": ["src/app/**/*.spec.ts", "src/app/**/*.test.ts"],
+            "coverageReporters": ["text-summary", "json-summary", "html"]
           }
         },
         "serve": {
@@ -114,6 +101,12 @@
             }
           },
           "defaultConfiguration": "development"
+        },
+        "lint": {
+          "builder": "@angular-eslint/builder:lint",
+          "options": {
+            "lintFilePatterns": ["src/**/*.ts", "src/**/*.html"]
+          }
         }
       }
     }

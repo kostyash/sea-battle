@@ -17,6 +17,13 @@
     }
   </div>
 
+  <!-- The keydown handler sits on the grid rather than on a cell on purpose: focus
+       moves asynchronously and fast keypresses would be lost on the cells. Focus
+       itself lives on the cells, which are real buttons carrying a roving tabindex —
+       so the square is reachable and operable from the keyboard, and the container
+       only ever sees an event that bubbled up from an already-focused child. The
+       rule cannot see that, and a `tabindex` here would be a decoration to quiet it. -->
+  <!-- eslint-disable-next-line @angular-eslint/template/interactive-supports-focus -->
   <div
     class="water"
     role="grid"

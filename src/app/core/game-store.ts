@@ -10,7 +10,6 @@ import { Orientation, SIZE, Side } from '../domain/grid';
 import {
   canPlace,
   clippedCells,
-  randomBoard,
   shipCells,
   withShip,
   withoutShipAt,

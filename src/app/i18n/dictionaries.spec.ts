@@ -8,12 +8,12 @@ import { RU } from './ru';
 
 type Book = Record<MsgKey, Phrase>;
 
-const TRANSLATIONS: ReadonlyArray<readonly [Lang, Book]> = [
+const TRANSLATIONS: readonly (readonly [Lang, Book])[] = [
   ['ru', RU],
   ['he', HE],
 ];
 
-const ALL: ReadonlyArray<readonly [Lang, Book]> = [['en', EN], ...TRANSLATIONS];
+const ALL: readonly (readonly [Lang, Book])[] = [['en', EN], ...TRANSLATIONS];
 
 /** The categories `Intl.PluralRules` can hand back for the three languages. */
 const PLURAL_FORMS = ['one', 'two', 'few', 'many', 'other'] as const;
