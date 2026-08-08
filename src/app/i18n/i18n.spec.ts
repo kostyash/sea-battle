@@ -28,6 +28,8 @@ const deny = (method: 'getItem' | 'setItem'): void => {
 
 describe('I18n', () => {
   beforeEach(() => {
+    TestBed.resetTestingModule();
+    localStorage.clear();
     // Poisoned on purpose: an assertion below must pass because the effect wrote
     // the attribute, not because a previous test happened to leave it right.
     root.setAttribute('lang', 'xx');

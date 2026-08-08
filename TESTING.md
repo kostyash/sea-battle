@@ -11,34 +11,35 @@ homemade. What we add on top is small and deliberate:
 
 | Where | What it sets |
 | --- | --- |
-| `angular.json` → `test` | the builder, `runner: vitest`, `tsConfig: tsconfig.spec.json`, `setupFiles`, coverage on, what coverage counts |
+| `angular.json` → `test` | the builder, `runner: vitest`, `tsConfig: tsconfig.spec.json`, coverage on, what coverage counts |
 | `vitest.config.ts` | passed through `runnerConfig` — reporters, `testTimeout`, the coverage thresholds |
-| `src/test-setup.ts` | the global `beforeEach`: sweeps what the TestBed reset does not |
 | `scripts/test.mjs` | turns `--run` into the builder's `--watch=false`, and `--gate` into `SB_COVERAGE_GATE=1` |
 
 `runnerConfig` is a documented option, but the CLI overrides `test.projects` and
 `test.include` in whatever it is handed — do not try to set those there.
 
-### Global setup
+### Global setup — tried, and taken back out
 
-Setup files are declared as **`setupFiles` on the `test` target in `angular.json`**,
-not in `vitest.config.ts`: the builder writes the runner's `setupFiles` itself, as
-`['init-testbed.js', 'vitest-mock-patch.js', ...yours]` with `sequence.setupFiles: 'list'`.
-Anything set in the vitest config is overwritten. Ours therefore runs *after* the
-TestBed is initialised, which is what makes it able to register hooks at all. A
-new setup file must also be added to `tsconfig.spec.json`'s `include`, or the
-compiler never sees it.
+The builder offers **`setupFiles`** on the test target (declared there, not in
+`vitest.config.ts`: the builder writes the runner's own `setupFiles` as
+`['init-testbed.js', 'vitest-mock-patch.js', ...yours]` and overwrites anything the
+vitest config sets). The obvious use for it here was the language cleanup every
+spec needs. It was tried, and it is not in the repository any more.
 
-Use one for cross-cutting state that every spec needs put back and that lives
-**outside the injector** — that is exactly what `src/test-setup.ts` does with
-`localStorage` and the `<html>` attributes. Do not use one for setup that only a
-few files need, or that a file has a specific reason for: a hook far away from
-the test hides why it is there. A spec's own `beforeEach` runs after the global
-one, so a file that wants a different starting state — `i18n.spec.ts` poisons
-`lang`/`dir` on purpose — still gets it.
+Locally it worked, and was even proven load-bearing: disarm the hook and four
+spec files went red. **CI disagreed.** The same commit failed on the runner with
+five assertions expecting English and getting Hebrew — the language of one spec
+deciding the next. The mechanism was never established: `CI=true` does not
+reproduce it locally, and neither does forcing `isolate: false` with
+`fileParallelism: false`, which was the leading theory and turned out to be
+wrong.
 
-The sibling option **`providersFile`** does the same job for Angular providers
-every test should have. Nothing here needs one yet.
+So the rule is empirical, and it is worth more than the theory would have been:
+**do not put correctness in a `setupFiles` hook.** Cleanup that a test depends on
+goes in that spec's own `beforeEach`, where it is visible and where it has been
+green in CI for the whole life of this project. The sibling option
+`providersFile` is untried here for the same reason — if it is ever wanted, prove
+it on CI before trusting it.
 
 ### Commands
 
@@ -100,11 +101,10 @@ What the reset does **not** touch is everything outside the injector:
 - the `lang` and `dir` attributes on `<html>`, stamped there by the i18n effect.
 - global stubs (`vi.stubGlobal`, `Storage.prototype` in the audio spec).
 
-The first two are swept for every test by `src/test-setup.ts`, so a spec should
-not repeat them. That file is load-bearing, and has been seen red: disarm its
-hook and four spec files fail on language leaking between tests. Stubs are the
-spec's own business — undo them in `afterEach`, unconditionally, not at the end
-of a test that may never reach its end.
+Every spec that touches language sweeps the first two in its own `beforeEach` —
+see above for why that is not centralised. Stubs are the spec's own business too:
+undo them in `afterEach`, unconditionally, not at the end of a test that may
+never reach its end.
 
 ## House rules
 

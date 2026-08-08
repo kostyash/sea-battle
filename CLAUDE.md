@@ -162,9 +162,11 @@ The ones that catch people out:
   that was not.
 - `await fixture.whenStable()` never resolves under `vi.useFakeTimers()`, and
   most component specs here use fake timers. Those keep `fixture.detectChanges()`.
-- The runner resets the TestBed between tests — never write
-  `TestBed.resetTestingModule()` in a `beforeEach`. Storage and the `<html>`
-  attributes it does not reset are swept by `src/test-setup.ts`.
+- The runner resets the TestBed, but only the injector. `localStorage` and the
+  `lang`/`dir` on `<html>` survive, and every spec that touches language clears
+  them in its own `beforeEach`. Do not move that into a `setupFiles` hook — it
+  was tried, it looked right locally, and CI failed on language leaking between
+  specs.
 - Property-based tests walk thousands of boards; `testTimeout` is 15 s because
   the CI runner is about three times slower than the laptop. That is honest CPU
   work, not a hang.

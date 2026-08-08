@@ -21,10 +21,14 @@ before you touched it. `npm test` without `--run` watches and never returns.
    middle of a test* is different and fine — that is how you build a second
    injector to compare against the first.
 
-2. **Clean up what the reset does not.** The reset rebuilds the injector and
-   nothing else. If the test touches language or sound, clear it yourself:
-   `localStorage.clear()`, the `lang`/`dir` attributes on `<html>`, and any
-   `vi.stubGlobal`. Left behind, they decide the outcome of a later test.
+2. **Clean up what the reset does not — in the spec's own `beforeEach`.** The
+   reset rebuilds the injector and nothing else. If the test touches language or
+   sound, clear it yourself: `localStorage.clear()`, the `lang`/`dir` attributes
+   on `<html>`, and any `vi.stubGlobal`. Left behind, they decide the outcome of
+   a later test. Do **not** hoist this into a `setupFiles` hook to save the
+   repetition: that was tried, it passed on the laptop, and CI went red with one
+   spec's language deciding the next. Nobody established why. Correctness stays
+   where it is visible.
 
 3. **Fake timers and `whenStable()` do not mix.** Under `vi.useFakeTimers()`,
    `await fixture.whenStable()` never resolves — it dies on the 15 s timeout.

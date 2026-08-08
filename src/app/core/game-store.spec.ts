@@ -34,9 +34,11 @@ const shipCellsOf = (board: Board): number[] => board.ships.flatMap((s) => s.cel
 
 describe('GameStore', () => {
   beforeEach(() => {
-    // the language, which decides the sentences the store renders, is swept by
-    // `src/test-setup.ts`
     vi.useFakeTimers();
+    // A language remembered by an earlier test would outlive the module and
+    // change the sentences the store renders — the log test reads one of them.
+    localStorage.clear();
+    TestBed.resetTestingModule();
   });
 
   afterEach(() => {
@@ -517,6 +519,8 @@ describe('GameStore', () => {
 describe('the mirror the result card holds up', () => {
   beforeEach(() => {
     vi.useFakeTimers();
+    localStorage.clear();
+    TestBed.resetTestingModule();
   });
 
   afterEach(() => {

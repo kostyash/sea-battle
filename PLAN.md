@@ -489,3 +489,31 @@ put off.
   with the settings that make the extension read templates as well as TypeScript.
   `npm run lint` clean, build exit 0 with no warnings, `npm test -- --run` —
   406/406, coverage gate green at 95.38% / 95.14%.
+- Phase 7, item 5: a red gate, recorded rather than hidden. The global test setup
+  from item 3 was wrong, and CI said so twice while the laptop said nothing.
+  `src/test-setup.ts` swept `localStorage` and the `lang`/`dir` on `<html>` from a
+  `setupFiles` hook, and locally it was not merely green but demonstrably
+  load-bearing — disarming the hook turned four spec files red. On the runner the
+  same commit failed with five assertions expecting English and receiving Hebrew:
+  the language of one spec deciding the next, which is exactly the leak the hook
+  was supposed to stop.
+  The mechanism was never established, and the guesses are recorded because they
+  were wrong. `CI=true` does not reproduce it. Neither does `isolate: false` with
+  `fileParallelism: false`, which was the leading theory — that a two-core runner
+  puts several spec files in one process where a setup-file hook stops covering
+  them all. Run that way, the failing arrangement passed 406/406. The i18n service
+  was read and cleared of suspicion: it takes its language from `readStored() ??
+  preferredLang(browserLanguages())`, so Hebrew can only have come from storage,
+  never from a dictionary.
+  So the cleanup went back where it was green for the whole life of the project —
+  into each spec's own `beforeEach` — and `TESTING.md`, `CLAUDE.md` and the
+  `writing-tests` skill now say to keep it there and why, as an empirical rule
+  rather than a theory. What survives from item 3 is what was independently
+  proven: the eleven redundant `TestBed.resetTestingModule()` calls stay removed,
+  `vitest/globals` stays out of `tsconfig.spec.json`, and the dead
+  `coverageExclude` entry stays gone.
+  The other lesson is mine and cost the same afternoon: I reported item 3 green on
+  the strength of local gates and pushed without waiting for CI. Local gates are
+  necessary and are not sufficient. Wait for the checks.
+  `npm run lint` clean, build exit 0 with no warnings, `npm test -- --run` —
+  406/406, coverage gate green at 95.38% / 95.14%.
