@@ -98,6 +98,57 @@ Rules to keep:
   overlays are positioned by `left: %` from cell 0 and the arrow keys walk the
   same index order.
 
+## Angular conventions
+
+The authority is the Angular CLI MCP server, configured for this project. It is
+version-aware, so consult it rather than working from memory:
+
+- `get_best_practices` with `workspacePath: c:\sea-battle` — the official guide
+  for the framework version actually installed here. Read it before writing or
+  changing component code.
+- `search_documentation` with `version: 22` — API signatures and concepts, with
+  links to angular.dev worth citing.
+- `list_projects` — the workspace map; it also reports that the test framework
+  here is vitest and the style language is plain CSS.
+
+What that guide asks for, and what this repository already does:
+
+- **Standalone components**, and never `standalone: true` in the decorator — it
+  has been the default since v20.
+- **Signals for state**, `computed()` for anything derived, `linkedSignal()` when
+  derived state must stay in step with several sources. Never `mutate` — `set`
+  or `update`.
+- **`input()` / `output()` functions**, not the decorators; `model()` for a
+  two-way `[(prop)]` instead of an input paired with an output.
+- **Host bindings live in the `host` object** of the decorator. `@HostBinding`
+  and `@HostListener` are out.
+- **Native control flow** — `@if`, `@for`, `@switch`, never `*ngIf` and friends.
+- **`class` and `style` bindings**, never `ngClass`/`ngStyle`.
+- **`inject()`**, not constructor injection. Services are single-responsibility
+  and `providedIn: 'root'`.
+- **Strict types**: no `any`; `unknown` where the type is genuinely unknown; let
+  inference do the obvious work.
+- **Accessibility is a requirement, not a polish pass**: AXE clean, WCAG AA
+  minimums, focus management, contrast and ARIA. The grid is a `role="grid"` of
+  `role="gridcell"` buttons with a roving tabindex, the result card is a real
+  modal made true for the keyboard by `inert` on the rest of the page — that is
+  the standard to hold new UI to.
+- **External templates and styles are addressed relative to the component's
+  `.ts`**, as `board-grid` does.
+
+Two places where the code is behind the current guide, both harmless and neither
+worth a churn commit on its own — fold them in when touching the file anyway:
+
+- Seven components still spell out `changeDetection: ChangeDetectionStrategy.OnPush`.
+  `OnPush` is the default from v22, so the line is now redundant.
+- The three services use `@Injectable({ providedIn: 'root' })`. v22 prefers the
+  shorter `@Service` decorator for new singletons.
+
+Nothing here uses forms or `NgOptimizedImage`: the one control was a range slider
+that has since been removed, and every image on the page is drawn in SVG or CSS.
+If a form does arrive, it is Signal Forms (`@angular/forms/signals`), stable in
+v22 — and reactive forms only if something makes those impossible.
+
 ## Tests
 
 Vitest through `@angular/build:unit-test`, jsdom. `*.spec.ts` sits next to what
